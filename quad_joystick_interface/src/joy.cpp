@@ -54,8 +54,8 @@ Joy::Joy() {
   //Initialize Parameters
 
   // Map similar to RC set-up
-  pnh.param("axis_roll_", axes_.roll, 3);	// RS <->
-  pnh.param("axis_pitch_", axes_.pitch, 4);	// RS up/down
+  pnh.param("axis_roll_", axes_.roll, 4);	// RS <->
+  pnh.param("axis_pitch_", axes_.pitch, 3);	// RS up/down
   pnh.param("axis_thrust_", axes_.thrust, 1);	// LS up/down
   pnh.param("axis_yaw_", axes_.yaw, 0);		// LS <->
 
@@ -106,8 +106,8 @@ void Joy::JoyCallback(const sensor_msgs::JoyConstPtr& msg) {
 
   trajectory_msg.position.x = 7.5*control_msg_.pitch;
   trajectory_msg.position.y = -7.5*control_msg_.roll;	// ROS y axis pos to the left
-  trajectory_msg.position.z = 0.1*(msg->axes[axes_.thrust] * max_.thrust / 2.0 * axes_.thrust_direction);	
-  trajectory_msg.yaw = -control_msg_.yaw_rate;	
+  trajectory_msg.position.z = 0.1*(msg->axes[axes_.thrust] * max_.thrust / 2.0 * axes_.thrust_direction);
+  trajectory_msg.yaw = -4*control_msg_.yaw_rate;
 
   // Hack for sending button states
   trajectory_msg.snap.x = msg->buttons[buttons_.takeoff];	// takeoff
@@ -118,7 +118,7 @@ void Joy::JoyCallback(const sensor_msgs::JoyConstPtr& msg) {
   trajectory_msg.jerk.y = msg->buttons[buttons_.ctrl_enable_mission];
   auto_mode = msg->buttons[buttons_.ctrl_enable_autonomous];	// enable auto
   trajectory_msg.jerk.z = msg->buttons[buttons_.ctrl_enable_autonomous];
-  trajectory_msg.snap.z = msg->buttons[buttons_.ctrl_enable_3dnav];	// 3D nav
+  trajectory_msg.snap.z = msg->buttons[buttons_.ctrl_enable_3dnav];	// land
 
   //Control message header information
   ros::Time update_time = ros::Time::now();

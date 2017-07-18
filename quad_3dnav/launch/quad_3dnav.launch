@@ -9,12 +9,12 @@
   <arg name="log_file" default="quad"/>
   <arg name="headless" default="true"/>
   <arg name="gui" default="true"/>
-  <arg name="debug" default="true" />
+  <arg name="debug" default="false" />
 
   <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
 <!--    <arg name="world_name" value="$(find quad_gazebo)/worlds/willowgarage.world"/> -->
-    <arg name="world_name" value="$(find quad_gazebo)/worlds/kitchen.world"/>  
+    <arg name="world_name" value="/home/stef/ROS/entrepot.world"/>
     <!-- more default parameters can be changed here -->
     <arg name="debug" value="false" /> 
     <arg name="paused" value="false"/>
@@ -71,30 +71,5 @@
 
   <!-- Visualisation RVIZ -->
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find quad_3dnav)/resource/moveit.rviz" output="screen"/>
-  
+
 </launch>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

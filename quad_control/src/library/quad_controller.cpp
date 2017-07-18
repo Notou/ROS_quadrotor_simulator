@@ -190,16 +190,17 @@ void PositionController::CalculatePositionControl(mav_msgs::CommandTrajectory wp
   yaw_er = wrap_180(wp.yaw - gps_yaw);
 
   if(abs(yaw_er) < yaw_KI_max){
-	yaw_er_sum = yaw_er_sum + yaw_er;
+    yaw_er_sum = yaw_er_sum + yaw_er;
   }
 
   cp = yaw_er * yaw_KP;
   ci = yaw_KI * dt * yaw_er_sum;
   cd = yaw_KD * current_gps.twist.twist.angular.z;
-  yaw_des = -(cp - cd); 
-  yaw_des = controller_utility_.limit(yaw_des, -50.0 * M_PI / 180.0, 50.0 * M_PI / 180.0);
+  yaw_des = -(cp - cd);
+  yaw_des = controller_utility_.limit(yaw_des, -100.0 * M_PI / 180.0, 100.0 * M_PI / 180.0);
 
-  des_attitude_cmds.roll = roll_des;	
+
+  des_attitude_cmds.roll = roll_des;
   des_attitude_cmds.pitch = pitch_des;
   des_attitude_cmds.yaw_rate = yaw_des;
   des_attitude_cmds.thrust = thrust_des;

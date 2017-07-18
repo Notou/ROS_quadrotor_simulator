@@ -35,6 +35,7 @@
 #include <ros/callback_queue.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_datatypes.h>
+#include <cmath>
 
 #include "quad_control/parameters_ros.h"
 

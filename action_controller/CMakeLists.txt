@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
   genmsg
+  mav_msgs
 )
 
 include_directories(${catkin_INCLUDE_DIRS})
@@ -50,5 +51,3 @@ target_link_libraries(action_controller ${catkin_LIBRARIES} ${CMAKE_THREAD_LIBS_
 
 
 #install(TARGETS action_controller LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
-
-
