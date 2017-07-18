@@ -18,13 +18,22 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   std_msgs
   message_generation
-  genmsg
+  mav_msgs
 )
 
 include_directories(${catkin_INCLUDE_DIRS})
 link_directories(${catkin_LIBRARY_DIRS})
 
-add_action_files(DIRECTORY action FILES MultiDofFollowJointTrajectory.action)
+add_message_files(
+  FILES
+  MultiDofFollowJointTrajectoryFeedback.msg
+  MultiDofFollowJointTrajectoryGoal.msg
+  MultiDofFollowJointTrajectoryResult.msg
+  MultiDofFollowJointTrajectoryActionFeedback.msg
+  MultiDofFollowJointTrajectoryActionGoal.msg
+  MultiDofFollowJointTrajectoryActionResult.msg
+  MultiDofFollowJointTrajectoryAction.msg
+)
 
 generate_messages(
   DEPENDENCIES
@@ -50,5 +59,3 @@ target_link_libraries(action_controller ${catkin_LIBRARIES} ${CMAKE_THREAD_LIBS_
 
 
 #install(TARGETS action_controller LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
-
-

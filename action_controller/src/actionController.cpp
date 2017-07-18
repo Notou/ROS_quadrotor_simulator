@@ -5,9 +5,11 @@
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
 #include <action_controller/MultiDofFollowJointTrajectoryAction.h>
 #include <geometry_msgs/Twist.h>
-#include <mav_msgs/CommandTrajectory.h>
+
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_datatypes.h>
+#include <mav_msgs/CommandTrajectory.h>
+#include <nav_msgs/Odometry.h>
 
 class Controller{
 private:
@@ -31,6 +33,7 @@ public:
 		empty.angular.x=0;
 		pub_topic = node_.advertise<geometry_msgs::Twist>("/cmd_vel", 10);
 		trajectory_pub = node_.advertise<mav_msgs::CommandTrajectory>("/cmd_3dnav", 10);
+		odometry_sub_ = node_.subscribe("/quad/ground_truth/odometry", 10, &Controller::OdometryCallback, this);
 		action_server_.start();
 		printf("\n\n Node ready! \n\n");
 }
@@ -38,15 +41,19 @@ private:
 	ros::NodeHandle node_;
 	ActionServer action_server_;
 	ros::Publisher pub_topic;
+	ros::Subscriber odometry_sub_;
 
 	ros::Publisher trajectory_pub;
   	mav_msgs::CommandTrajectory desired_wp;
-  
+
   	tf::Quaternion q;
   	double des_roll, des_pitch, des_yaw;
 
 	geometry_msgs::Twist empty;
 	geometry_msgs::Transform_<std::allocator<void> > lastPosition;
+	geometry_msgs::Transform_<std::allocator<void> > currentPosition;
+	double distanceToCurrentWaypoint;
+	double xError, yError, zError;
 	ros::Duration lastTime;
 	ros::Duration currentTime;
 	double dt;
@@ -58,8 +65,8 @@ private:
 	GoalHandle active_goal_;
 	trajectory_msgs::MultiDOFJointTrajectory_<std::allocator<void> > toExecute;
 
-  	double current_time; 
-  	double start_time; 
+  	double current_time;
+  	double start_time;
 
 	void cancelCB(GoalHandle gh){
 		if (active_goal_ == gh)
@@ -114,6 +121,12 @@ private:
 		return NULL;
 	}
 
+	void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg){
+		currentPosition.translation.x = (*odometry_msg).pose.pose.position.x;
+		currentPosition.translation.y = (*odometry_msg).pose.pose.position.y;
+		currentPosition.translation.z = (*odometry_msg).pose.pose.position.z;
+	}
+
 	void executeTrajectory(){
 		if(toExecute.joint_names[0]=="virtual_joint" && toExecute.points.size()>0){
 			for(int k=0; k<toExecute.points.size(); k++){
@@ -127,26 +140,49 @@ private:
 				//Convert quaternion to Euler angles
   				tf:quaternionMsgToTF(point.rotation, q);
   				tf::Matrix3x3(q).getRPY(des_roll, des_pitch, des_yaw);
-  				desired_wp.yaw = des_yaw;
+					if(k+1 <toExecute.points.size()){
+							// atan2( y_err, x_err)
+						  desired_wp.yaw = atan2((toExecute.points[k+1].transforms[0].translation.y - toExecute.points[k].transforms[0].translation.y), (toExecute.points[k+1].transforms[0].translation.x-toExecute.points[k].transforms[0].translation.x));
+
+					}else{
+						desired_wp.yaw = des_yaw;
+					}
 
 				desired_wp.jerk.x = 1;
+				start_time = ros::Time::now().toSec();
+				current_time = ros::Time::now().toSec();
 
 				if(k==0){
-					start_time = ros::Time::now().toSec();
-					current_time = ros::Time::now().toSec();
 
 					desired_wp.header.stamp = ros::Time::now();
-        				desired_wp.header.frame_id = "3dnav_action_frame";
+        	desired_wp.header.frame_id = "3dnav_action_frame";
 					trajectory_pub.publish(desired_wp);
 				}
 				else{
-
-					while( (current_time-start_time) < toExecute.points[k].time_from_start.toSec() ){
-					current_time = ros::Time::now().toSec();
-					}
+					xError = (currentPosition.translation.x - toExecute.points[k].transforms[0].translation.x) * (currentPosition.translation.x - toExecute.points[k].transforms[0].translation.x);
+					yError = (currentPosition.translation.y - toExecute.points[k].transforms[0].translation.y) * (currentPosition.translation.y - toExecute.points[k].transforms[0].translation.y);
+					zError = (currentPosition.translation.z - toExecute.points[k].transforms[0].translation.z) * (currentPosition.translation.z - toExecute.points[k].transforms[0].translation.z);
+					distanceToCurrentWaypoint = xError + yError + zError;
 					desired_wp.header.stamp = ros::Time::now();
-        				desired_wp.header.frame_id = "3dnav_action_frame";
+        	desired_wp.header.frame_id = "3dnav_action_frame";
 					trajectory_pub.publish(desired_wp);
+					while( distanceToCurrentWaypoint > 0.5 ){
+						ROS_DEBUG("Distance to waypoint: %f", distanceToCurrentWaypoint);
+						ros::Duration(0.1).sleep();
+						xError = (currentPosition.translation.x - toExecute.points[k].transforms[0].translation.x) * (currentPosition.translation.x - toExecute.points[k].transforms[0].translation.x);
+						yError = (currentPosition.translation.y - toExecute.points[k].transforms[0].translation.y) * (currentPosition.translation.y - toExecute.points[k].transforms[0].translation.y);
+						zError = (currentPosition.translation.z - toExecute.points[k].transforms[0].translation.z) * (currentPosition.translation.z - toExecute.points[k].transforms[0].translation.z);
+						distanceToCurrentWaypoint = xError + yError + zError;
+
+						current_time = ros::Time::now().toSec();
+						if( (current_time-start_time) > 2 ){
+							pub_topic.publish(empty);
+							active_goal_.setAborted();
+							has_active_goal_=false;
+							created=0;
+							return;
+						}
+					}
 				}
 
 /*

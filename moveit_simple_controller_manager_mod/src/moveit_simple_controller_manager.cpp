@@ -91,7 +91,7 @@ public:
 				else if (controller_list[i].hasMember("action_ns"))
 					action_ns = std::string(controller_list[i]["action_ns"]);
 				else
-					ROS_WARN("MoveitSimpleControllerManager: please note that 'action_ns' no longer has a default value.");
+					ROS_WARN("MoveitSimpleControllerManager: please note that 'action_ns' no longer has a default value. LALALALALALALALALALAALALAL!!!");
 
 				if (controller_list[i]["joints"].getType() != XmlRpc::XmlRpcValue::TypeArray)
 				{

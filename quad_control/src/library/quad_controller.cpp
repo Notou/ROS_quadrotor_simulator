@@ -65,7 +65,7 @@ bool ControllerUtility::UpdateSwitchValue(bool currInput)
 }
 
 
-Eigen::Vector3d ControllerUtility::rotateGFtoBF(double GF_x, double GF_y, double GF_z, double GF_roll, double GF_pitch, double GF_yaw){ 
+Eigen::Vector3d ControllerUtility::rotateGFtoBF(double GF_x, double GF_y, double GF_z, double GF_roll, double GF_pitch, double GF_yaw){
 
   Eigen::Matrix3d R_roll;
   Eigen::Matrix3d R_pitch;
@@ -85,7 +85,7 @@ Eigen::Vector3d ControllerUtility::rotateGFtoBF(double GF_x, double GF_y, double
 
   return BF_.transpose();
 
-} 
+}
 
 //Position Controller
 PositionController::PositionController() {}
@@ -152,11 +152,13 @@ void PositionController::CalculatePositionControl(mav_msgs::CommandTrajectory wp
   gps_y = current_gps.pose.pose.position.y;
   gps_z = current_gps.pose.pose.position.z;
 
+
+
   //X PID
   x_er = wp.position.x - gps_x;
   if(abs(x_er) < x_KI_max){
 	x_er_sum = x_er_sum + x_er;
-  }  
+  }
   cp = x_er * x_KP;
   ci = x_KI * dt * x_er_sum;
   cd = x_KD * current_gps.twist.twist.linear.x;
@@ -179,7 +181,7 @@ void PositionController::CalculatePositionControl(mav_msgs::CommandTrajectory wp
   z_er = wp.position.z - gps_z;
   if(abs(z_er) < z_KI_max){
 	z_er_sum = z_er_sum + z_er;
-  }  
+  }
   cp = z_er * z_KP;
   ci = z_KI * dt * z_er_sum;
   cd = z_KD * current_gps.twist.twist.linear.z;
@@ -190,16 +192,17 @@ void PositionController::CalculatePositionControl(mav_msgs::CommandTrajectory wp
   yaw_er = wrap_180(wp.yaw - gps_yaw);
 
   if(abs(yaw_er) < yaw_KI_max){
-	yaw_er_sum = yaw_er_sum + yaw_er;
+    yaw_er_sum = yaw_er_sum + yaw_er;
   }
 
   cp = yaw_er * yaw_KP;
   ci = yaw_KI * dt * yaw_er_sum;
   cd = yaw_KD * current_gps.twist.twist.angular.z;
-  yaw_des = -(cp - cd); 
-  yaw_des = controller_utility_.limit(yaw_des, -50.0 * M_PI / 180.0, 50.0 * M_PI / 180.0);
+  yaw_des = -(cp - cd);
+  yaw_des = controller_utility_.limit(yaw_des, -100.0 * M_PI / 180.0, 100.0 * M_PI / 180.0);
 
-  des_attitude_cmds.roll = roll_des;	
+
+  des_attitude_cmds.roll = roll_des;
   des_attitude_cmds.pitch = pitch_des;
   des_attitude_cmds.yaw_rate = yaw_des;
   des_attitude_cmds.thrust = thrust_des;
@@ -292,7 +295,7 @@ void AttitudeController::InitializeParameters(const ros::NodeHandle& pnh){
 
 
   //TODO Param server?
-  //Control input to motor mapping  
+  //Control input to motor mapping
   KT = 1.33e-05;
   Kd = 1.39e-06;
   l = .2;
@@ -306,7 +309,7 @@ void AttitudeController::InitializeParameters(const ros::NodeHandle& pnh){
 
 
 /*
-TODO: 
+TODO:
 Limit Integrators (ci)
 Limit Control Commands (x_des)
 */
@@ -314,7 +317,7 @@ void AttitudeController::CalculateAttitudeControl(mav_msgs::CommandRollPitchYawr
 
   //Determine vector size based on number of motors
   des_rate_output->resize(4);
-  
+
   desired_angular_rates.resize(4);
 
   //Convert quaternion to Euler angles
@@ -331,7 +334,7 @@ void AttitudeController::CalculateAttitudeControl(mav_msgs::CommandRollPitchYawr
   roll_er = control_cmd_input.roll - meas_roll;
   if(abs(roll_er) < roll_KI_max){
 	roll_er_sum = roll_er_sum + roll_er;
-  }  
+  }
   cp = roll_er * roll_KP;
   ci = roll_KI * dt * roll_er_sum;
   cd = roll_KD * current_imu.angular_velocity.x;
@@ -370,7 +373,7 @@ void AttitudeController::CalculateAttitudeControl(mav_msgs::CommandRollPitchYawr
 
 
 /*
-TODO: 
+TODO:
 Limit Integrators (ci)
 Limit Control Commands (U#)
 */
@@ -378,7 +381,7 @@ void AttitudeController::CalculateRateControl(mav_msgs::CommandRollPitchYawrateT
 
   //Determine vector size based on number of motors
   des_control_output->resize(4);
-  
+
   desired_control_cmds.resize(4);
 
   //Convert quaternion to Euler angles
@@ -395,7 +398,7 @@ void AttitudeController::CalculateRateControl(mav_msgs::CommandRollPitchYawrateT
   p_er = des_rate_input[1] - current_imu.angular_velocity.x;
   if(abs(p_er) < p_KI_max){
 	p_er_sum = p_er_sum + p_er;
-  }  
+  }
   cp = p_er * p_KP;
   ci = p_KI * dt * p_er_sum;
   x_ang_acc = (current_imu.angular_velocity.x - last_ang_vel_x)/dt;
@@ -426,7 +429,7 @@ void AttitudeController::CalculateRateControl(mav_msgs::CommandRollPitchYawrateT
   }
   else{
     yaw_vel_target = 0;
-  }	
+  }
 
   r_er = yaw_vel_target - (-current_imu.angular_velocity.z);
   if(abs(r_er) < r_KI_max){
@@ -459,7 +462,7 @@ void AttitudeController::CalculateMotorCommands(Eigen::VectorXd control_inputs, 
   U3 = control_inputs[2];
   U4 = control_inputs[3];
 
-  //Control input to motor mapping  
+  //Control input to motor mapping
   w1 = U1/(4*KT) - U3/(2*KT*l) + U4/(4*Kd);
   w2 = U1/(4*KT) - U2/(2*KT*l) - U4/(4*Kd);
   w3 = U1/(4*KT) + U3/(2*KT*l) + U4/(4*Kd);
@@ -475,7 +478,7 @@ void AttitudeController::CalculateMotorCommands(Eigen::VectorXd control_inputs, 
   w1 = sqrt(w1);
   w2 = sqrt(w2);
   w3 = sqrt(w3);
-  w4 = sqrt(w4);  
+  w4 = sqrt(w4);
 
   desired_motor_velocities[0] = w1;
   desired_motor_velocities[1] = w2;
@@ -509,7 +512,3 @@ void AttitudeController::CalculateMotorCommands(Eigen::VectorXd control_inputs, 
   imu_message_.angular_velocity.y = angular_velocity_I[1];
   imu_message_.angular_velocity.z = angular_velocity_I[2];
 */
-
-
-
-

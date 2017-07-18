@@ -35,6 +35,7 @@
 #include <ros/callback_queue.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_datatypes.h>
+#include <cmath>
 
 #include "quad_control/parameters_ros.h"
 
@@ -45,7 +46,7 @@ class ControllerUtility{
   ControllerUtility();
   ~ControllerUtility();
 
-  //Utility functions 
+  //Utility functions
   double map(double x, double in_min, double in_max, double out_min, double out_max);
   double limit( double in, double min, double max);
   bool GetSwitchValue(void);
@@ -192,7 +193,7 @@ class AttitudeController {
   //Rate Controller
   double p_er, q_er, r_er;
   double p_er_sum, q_er_sum, r_er_sum;
-  
+
   //P Controller
   double p_KI_max;
   double p_KP;
@@ -220,7 +221,7 @@ class AttitudeController {
 
   double U1, U2, U3, U4;
 
-  //Motor Mapping 
+  //Motor Mapping
   double KT;
   double Kd;
   double l;
@@ -230,5 +231,3 @@ class AttitudeController {
 };
 
 }
-
-
