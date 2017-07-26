@@ -53,7 +53,7 @@ WaypointPublisherNode::WaypointPublisherNode(){
 
   // Subscribers
   cmd_pos_sub_ = nh.subscribe("command/trajectory", 10, &WaypointPublisherNode::CommandTrajectoryCallback, this);
-  odometry_sub_ = nh.subscribe("ground_truth/odometry", 10, &WaypointPublisherNode::OdometryCallback, this);
+  odometry_sub_ = nh.subscribe("odometry", 10, &WaypointPublisherNode::OdometryCallback, this);
   cmd_vel_sub_ = nh.subscribe("/cmd_vel", 10, &WaypointPublisherNode::CommandVelCallback, this);
   cmd_threednav_sub_ = nh.subscribe("/cmd_3dnav", 10, &WaypointPublisherNode::threedNavCallback, this);
 

@@ -18,7 +18,7 @@
 
 #include "position_controller_node.h"
 
-#include "quad_control/parameters_ros.h"
+//#include "quad_control/parameters_ros.h"
 
 
 namespace quad_control {
@@ -27,14 +27,6 @@ PositionControllerNode::PositionControllerNode(){
 
   InitializeParams();
 
-  ros::NodeHandle nh;
-
-  // Subscribers
-  cmd_trajectory_sub_ = nh.subscribe("command/waypoint", 10, &PositionControllerNode::WaypointCallback, this);
-  odometry_sub_ = nh.subscribe("ground_truth/odometry", 10, &PositionControllerNode::OdometryCallback, this);
-
-  //Publishing message type CommandRollPitchYawrateThrust on topic "command/roll_pitch_yawrate_thrust"
-  ctrl_pub_ = nh.advertise<mav_msgs::CommandRollPitchYawrateThrust>("command/roll_pitch_yawrate_thrust", 10);
 
 }
 
@@ -43,12 +35,12 @@ PositionControllerNode::~PositionControllerNode() {}
 
 void PositionControllerNode::InitializeParams(){
 
-  ros::NodeHandle pnh("~");   
+  ros::NodeHandle pnh("~");
 
   GetVehicleParameters(pnh, &vehicle_parameters_);
 
   position_controller_.InitializeParameters(pnh);
-  
+
   wp.position.x = 0.0;
   wp.position.y = 0.0;
   wp.position.z = 0.5;
@@ -69,22 +61,63 @@ void PositionControllerNode::Publish(){
 
 }
 
+void PositionControllerNode::Run(){
+  tf2_ros::Buffer tfBuffer;
+  tf2_ros::TransformListener tfListener(tfBuffer);
+  ros::NodeHandle nh;
+
+  // Subscribers
+  cmd_trajectory_sub_ = nh.subscribe("command/waypoint", 10, &PositionControllerNode::WaypointCallback, this);
+  //odometry_sub_ = nh.subscribe("ground_truth/odometry", 10, &PositionControllerNode::OdometryCallback, this);
+
+  //Publishing message type CommandRollPitchYawrateThrust on topic "command/roll_pitch_yawrate_thrust"
+  ctrl_pub_ = nh.advertise<mav_msgs::CommandRollPitchYawrateThrust>("command/roll_pitch_yawrate_thrust", 10);
+  odom_pub_ = nh.advertise<nav_msgs::Odometry>("odometry", 10);
+
+  ros::Rate rate(20.0);
+  while (nh.ok()){
+    geometry_msgs::TransformStamped transformStamped;
+    try{
+      transformStamped = tfBuffer.lookupTransform("map", "cam0",
+                               ros::Time(0),ros::Duration(1.0));
+    }
+    catch (tf2::TransformException &ex) {
+      ROS_WARN("%s",ex.what());
+      ros::Duration(1.0).sleep();
+      continue;
+    }
+
+    // copy pose to odom msg
+    current_gps_.header = transformStamped.header;
+    current_gps_.header.frame_id = "map";
+    current_gps_.child_frame_id = "cam0";
+    current_gps_.pose.pose.position.x = transformStamped.transform.translation.x;
+    current_gps_.pose.pose.position.y = transformStamped.transform.translation.y;
+    current_gps_.pose.pose.position.z = transformStamped.transform.translation.z;
+    current_gps_.pose.pose.orientation = transformStamped.transform.rotation;
+    OdometryCallback();
+    odom_pub_.publish(current_gps_);
+
+    ros::spinOnce();
+    rate.sleep();
+  }
+}
+
 
 // Callbacks
 void PositionControllerNode::WaypointCallback(const mav_msgs::CommandTrajectoryConstPtr& trajectory_reference_msg){
 
-  ROS_INFO_ONCE("Position_controller_node got first Waypoint message.");
+  ROS_WARN("Position_controller_node got first Waypoint message.");
 
   // Update desired waypoint
-  wp = *trajectory_reference_msg;  
- 
+  wp = *trajectory_reference_msg;
+
 }
 
-void PositionControllerNode::OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg){
+void PositionControllerNode::OdometryCallback(){
 
   ROS_INFO_ONCE("Position_controller_node got first GPS message.");
 
-  current_gps_ = *odometry_msg;
 
   //Publish if in GPS mode
   if(wp.jerk.x){
@@ -98,7 +131,7 @@ void PositionControllerNode::OdometryCallback(const nav_msgs::OdometryConstPtr& 
 
   }
 
- 
+
 }
 
 }
@@ -109,8 +142,8 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "position_controller_node");
 
   quad_control::PositionControllerNode position_controller_node;
-
-  ros::spin();
+  position_controller_node.Run();
+  // ros::spin();
 
   return 0;
 }

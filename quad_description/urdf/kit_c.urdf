@@ -24,10 +24,10 @@
   <!-- Main multirotor link -->
   <!-- Rotor joint and link -->
   <!-- Instantiate multirotor_base_macro once -->
-  <link name="base_link"/>
+  <link name="cam0"/>
   <joint name="base_joint" type="fixed">
     <origin rpy="0 0 0" xyz="0 0 0"/>
-    <parent link="base_link"/>
+    <parent link="cam0"/>
     <child link="base_link_inertia"/>
   </joint>
   <link name="base_link_inertia">
@@ -53,15 +53,15 @@
       </geometry>
     </collision>
   </link>
-  <!-- attach multirotor_base_plugin to the base_link -->
+  <!-- attach multirotor_base_plugin to the cam0 -->
   <gazebo>
     <plugin filename="librotors_gazebo_multirotor_base_plugin.so" name="rosbag">
       <robotNamespace>quad</robotNamespace>
-      <linkName>base_link</linkName>
+      <linkName>cam0</linkName>
       <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
     </plugin>
   </gazebo>
-  <gazebo reference="base_link">
+  <gazebo reference="cam0">
     <material>Gazebo/DarkGrey</material>
   </gazebo>
   <!-- Instantiate rotors -->
@@ -70,7 +70,7 @@
     <axis xyz="0 0 1"/>
     <!-- TODO(ff): not currently set because it's not yet supported -->
     <!-- <limit effort="2000" velocity="${max_rot_velocity}" /> -->
-    <parent link="base_link"/>
+    <parent link="cam0"/>
     <child link="rotor_0"/>
   </joint>
   <!-- TODO(ff): not currently set because it's not yet supported -->
@@ -125,7 +125,7 @@
     <axis xyz="0 0 1"/>
     <!-- TODO(ff): not currently set because it's not yet supported -->
     <!-- <limit effort="2000" velocity="${max_rot_velocity}" /> -->
-    <parent link="base_link"/>
+    <parent link="cam0"/>
     <child link="rotor_1"/>
   </joint>
   <!-- TODO(ff): not currently set because it's not yet supported -->
@@ -180,7 +180,7 @@
     <axis xyz="0 0 1"/>
     <!-- TODO(ff): not currently set because it's not yet supported -->
     <!-- <limit effort="2000" velocity="${max_rot_velocity}" /> -->
-    <parent link="base_link"/>
+    <parent link="cam0"/>
     <child link="rotor_2"/>
   </joint>
   <!-- TODO(ff): not currently set because it's not yet supported -->
@@ -235,7 +235,7 @@
     <axis xyz="0 0 1"/>
     <!-- TODO(ff): not currently set because it's not yet supported -->
     <!-- <limit effort="2000" velocity="${max_rot_velocity}" /> -->
-    <parent link="base_link"/>
+    <parent link="cam0"/>
     <child link="rotor_3"/>
   </joint>
   <!-- TODO(ff): not currently set because it's not yet supported -->

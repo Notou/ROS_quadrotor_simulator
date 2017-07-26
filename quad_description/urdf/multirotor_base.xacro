@@ -24,11 +24,11 @@
   <xacro:macro name="multirotor_base_macro"
     params="robot_namespace mass body_width body_height mesh_file mesh_scale color *inertia">
 
-    <link name="base_link"></link>
+    <link name="cam0"></link>
 
     <joint name="base_joint" type="fixed">
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <parent link="base_link" />
+      <parent link="cam0" />
       <child link="base_link_inertia" />
     </joint>
 
@@ -56,16 +56,16 @@
       </collision>
     </link>
 
-    <!-- attach multirotor_base_plugin to the base_link -->
+    <!-- attach multirotor_base_plugin to the cam0 -->
     <gazebo>
       <plugin filename="librotors_gazebo_multirotor_base_plugin.so" name="rosbag">
         <robotNamespace>${robot_namespace}</robotNamespace>
-        <linkName>base_link</linkName>
+        <linkName>cam0</linkName>
         <rotorVelocitySlowdownSim>${rotor_velocity_slowdown_sim}</rotorVelocitySlowdownSim>
       </plugin>
     </gazebo>
 
-    <gazebo reference="base_link">
+    <gazebo reference="cam0">
       <material>Gazebo/${color}</material>
     </gazebo>
   </xacro:macro>

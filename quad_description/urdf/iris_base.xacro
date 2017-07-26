@@ -16,7 +16,7 @@
   <xacro:imu_plugin_macro
     namespace="${namespace}"
     imu_suffix=""
-    parent_link="base_link"
+    parent_link="cam0"
     imu_topic="imu"
     mass_imu_sensor="0.015"
     gyroscope_noise_density="0.0003394"
@@ -37,7 +37,7 @@
     <xacro:imu_plugin_macro
       namespace="${namespace}"
       imu_suffix="gt"
-      parent_link="base_link"
+      parent_link="cam0"
       imu_topic="ground_truth/imu"
       mass_imu_sensor="0.00001"
       gyroscope_noise_density="0.0"
@@ -57,7 +57,7 @@
     <xacro:odometry_plugin_macro
       namespace="${namespace}/ground_truth"
       odometry_sensor_suffix="gt"
-      parent_link="base_link"
+      parent_link="cam0"
       pose_topic="pose"
       pose_with_covariance_topic="pose_with_covariance"
       position_topic="position"

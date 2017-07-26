@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   genmsg
   mav_msgs
+  tf2_ros
 )
 
 include_directories(${catkin_INCLUDE_DIRS})

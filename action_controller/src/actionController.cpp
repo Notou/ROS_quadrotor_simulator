@@ -33,8 +33,9 @@ public:
 		empty.angular.x=0;
 		pub_topic = node_.advertise<geometry_msgs::Twist>("/cmd_vel", 10);
 		trajectory_pub = node_.advertise<mav_msgs::CommandTrajectory>("/cmd_3dnav", 10);
-		odometry_sub_ = node_.subscribe("/quad/ground_truth/odometry", 10, &Controller::OdometryCallback, this);
+		odometry_sub_ = node_.subscribe("/quad/odometry", 10, &Controller::OdometryCallback, this);
 		action_server_.start();
+
 		printf("\n\n Node ready! \n\n");
 }
 private:

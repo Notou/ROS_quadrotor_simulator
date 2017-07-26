@@ -4,12 +4,12 @@
   <arg name="name" default="quad"/>
   <arg name="model" default="$(find quad_description)/urdf/kit_c_base.xacro"/>
   <arg name="tf_prefix" default="$(optenv ROS_NAMESPACE)"/>
-  <arg name="x" default="-1.8"/>
-  <arg name="y" default="-7.0"/>
-  <arg name="z" default="0.05"/>
+  <arg name="x" default="0"/>
+  <arg name="y" default="0"/>
+  <arg name="z" default="0"/>
   <arg name="roll"  default="0" />
   <arg name="pitch" default="0" />
-  <arg name="yaw"   default="1.52" /> 
+  <arg name="yaw"   default="0" />
   <arg name="enable_logging" default="true"/>
   <arg name="enable_ground_truth" default="true"/>
   <arg name="enable_camera" default="false"/>
@@ -41,7 +41,7 @@
    respawn="false" output="screen">
   </node>
 
-  <!-- spawn image viewer for camera 
+  <!-- spawn image viewer for camera
     <node pkg="image_view" type="image_view" name="image_view" >
       <remap from="image" to="/$(arg name)/camera_/image_raw" />
     </node>

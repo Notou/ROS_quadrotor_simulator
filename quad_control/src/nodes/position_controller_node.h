@@ -32,6 +32,8 @@
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
+#include <tf2_ros/transform_listener.h>
+#include <geometry_msgs/TransformStamped.h>
 
 #include "quad_control/quad_controller.h"
 
@@ -44,6 +46,7 @@ class PositionControllerNode {
 
   void InitializeParams();
   void Publish();
+  void Run();
 
  private:
 
@@ -53,9 +56,9 @@ class PositionControllerNode {
 
   //Subscribers
   ros::Subscriber cmd_trajectory_sub_;
-  ros::Subscriber odometry_sub_;
 
   ros::Publisher ctrl_pub_;
+  ros::Publisher odom_pub_;
 
   //Control variables
   nav_msgs::Odometry current_gps_;
@@ -63,11 +66,10 @@ class PositionControllerNode {
   mav_msgs::CommandTrajectory wp;
 
   rotors_control::VehicleParameters vehicle_parameters_;
-  
+
   void WaypointCallback(const mav_msgs::CommandTrajectoryConstPtr& trajectory_reference_msg);
-  void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
+  void OdometryCallback();
 
 };
 
 }
-
