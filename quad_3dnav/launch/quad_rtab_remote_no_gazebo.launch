@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+
+<launch>
+
+
+
+  <group ns="quad">
+    <node name="joy_node" pkg="joy" type="joy_node" />
+    <node name="quad_joystick_interface" pkg="quad_joystick_interface" type="quad_joystick_interface" output="screen"/>
+  </group>
+
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find quad_3dnav)/resource/moveit.rviz" output="screen"/>
+
+
+
+</launch>
