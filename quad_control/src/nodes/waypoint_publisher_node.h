@@ -27,6 +27,7 @@
 #include <iostream>
 
 #include <std_srvs/Empty.h>
+#include <std_msgs/Empty.h>
 
 #include <mav_msgs/CommandAttitudeThrust.h>
 #include <mav_msgs/CommandTrajectory.h>
@@ -85,6 +86,8 @@ class WaypointPublisherNode {
 
   //Publisher
   ros::Publisher trajectory_pub;
+  ros::Publisher takeoff_pub;
+  ros::Publisher land_pub;
 
   //Waypoint variables
   planning_msgs::EigenWayPoint current_waypoint_;
@@ -101,7 +104,7 @@ class WaypointPublisherNode {
   ControllerUtility control_mode;
   ControllerUtility auto_mode;
   ControllerUtility threednav_mode;
- 
+
   WaypointWithTime waypoint_utility;
   std::vector<WaypointWithTime> waypoints;
   Eigen::Vector3d waypointBF;

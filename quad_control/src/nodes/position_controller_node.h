@@ -34,6 +34,7 @@
 #include <ros/callback_queue.h>
 #include <tf2_ros/transform_listener.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/Twist.h>
 
 #include "quad_control/quad_controller.h"
 
@@ -59,6 +60,7 @@ class PositionControllerNode {
 
   ros::Publisher ctrl_pub_;
   ros::Publisher odom_pub_;
+  ros::Publisher bebop_topic;
 
   //Control variables
   nav_msgs::Odometry current_gps_;

@@ -57,7 +57,17 @@ void PositionControllerNode::Publish(){
     control_msg_.header.stamp = update_time;
     control_msg_.header.frame_id = "quad_position_ctrl_frame";
 
+    geometry_msgs::Twist twist;
+    twist.linear.x = control_msg_.pitch;
+    twist.linear.y = control_msg_.roll;
+    twist.linear.z = control_msg_.thrust;
+    twist.angular.z = control_msg_.yaw_rate;
+    control_msg_.thrust += 7.84;
+    control_msg_.pitch *= (20.0 * M_PI / 180.0);
+    control_msg_.roll *= (20.0 * M_PI / 180.0);
+    control_msg_.yaw_rate *= (100.0 * M_PI / 180.0);
     ctrl_pub_.publish(control_msg_);
+    bebop_topic.publish(twist);
 
 }
 
@@ -73,12 +83,13 @@ void PositionControllerNode::Run(){
   //Publishing message type CommandRollPitchYawrateThrust on topic "command/roll_pitch_yawrate_thrust"
   ctrl_pub_ = nh.advertise<mav_msgs::CommandRollPitchYawrateThrust>("command/roll_pitch_yawrate_thrust", 10);
   odom_pub_ = nh.advertise<nav_msgs::Odometry>("odometry", 10);
+  bebop_topic = nh.advertise<geometry_msgs::Twist>("/cmd_vel", 10);
 
   ros::Rate rate(20.0);
   while (nh.ok()){
     geometry_msgs::TransformStamped transformStamped;
     try{
-      transformStamped = tfBuffer.lookupTransform("map", "cam0",
+      transformStamped = tfBuffer.lookupTransform("world", "cam0",
                                ros::Time(0),ros::Duration(1.0));
     }
     catch (tf2::TransformException &ex) {
@@ -86,6 +97,14 @@ void PositionControllerNode::Run(){
       ros::Duration(1.0).sleep();
       continue;
     }
+
+    // calc velocity
+    double timeSinceLastTf = (transformStamped.header.stamp.sec - current_gps_.header.stamp.sec) + (transformStamped.header.stamp.nsec - current_gps_.header.stamp.nsec)*0.000000001;
+    //Diff of seconds plus diff of nanoseconds (nanosec have to be divided by 10e9)
+
+    current_gps_.twist.twist.linear.x = (transformStamped.transform.translation.x - current_gps_.pose.pose.position.x)/timeSinceLastTf;
+    current_gps_.twist.twist.linear.y = (transformStamped.transform.translation.y - current_gps_.pose.pose.position.y)/timeSinceLastTf;
+    current_gps_.twist.twist.linear.z = (transformStamped.transform.translation.z - current_gps_.pose.pose.position.z)/timeSinceLastTf;
 
     // copy pose to odom msg
     current_gps_.header = transformStamped.header;
@@ -95,6 +114,7 @@ void PositionControllerNode::Run(){
     current_gps_.pose.pose.position.y = transformStamped.transform.translation.y;
     current_gps_.pose.pose.position.z = transformStamped.transform.translation.z;
     current_gps_.pose.pose.orientation = transformStamped.transform.rotation;
+    printf("Youpla!\n");
     OdometryCallback();
     odom_pub_.publish(current_gps_);
 

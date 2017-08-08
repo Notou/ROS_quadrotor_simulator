@@ -24,7 +24,7 @@ namespace quad_control {
 
 std::vector<quad_control::WaypointWithTime> WaypointWithTime::Read_waypoints(std::vector<quad_control::WaypointWithTime> waypoints){
 
-  std::ifstream wp_file("/home/wil/ros/catkin_ws/src/arducopter_slam/quad_control/resource/kitchen_short_waypoints.txt"); 
+  std::ifstream wp_file("/home/wil/ros/catkin_ws/src/arducopter_slam/quad_control/resource/kitchen_short_waypoints.txt");
   //wg_waypoints.txt  kitchen_waypoints.txt
 
   if (wp_file.is_open()) {
@@ -54,11 +54,13 @@ WaypointPublisherNode::WaypointPublisherNode(){
   // Subscribers
   cmd_pos_sub_ = nh.subscribe("command/trajectory", 10, &WaypointPublisherNode::CommandTrajectoryCallback, this);
   odometry_sub_ = nh.subscribe("odometry", 10, &WaypointPublisherNode::OdometryCallback, this);
-  cmd_vel_sub_ = nh.subscribe("/cmd_vel", 10, &WaypointPublisherNode::CommandVelCallback, this);
+  //cmd_vel_sub_ = nh.subscribe("/cmd_vel", 10, &WaypointPublisherNode::CommandVelCallback, this);
   cmd_threednav_sub_ = nh.subscribe("/cmd_3dnav", 10, &WaypointPublisherNode::threedNavCallback, this);
 
   //Publisher
   trajectory_pub = nh.advertise<mav_msgs::CommandTrajectory>("command/waypoint", 10);
+  takeoff_pub = nh.advertise<std_msgs::Empty>("/bebop/takeoff", 10);
+  land_pub = nh.advertise<std_msgs::Empty>("/bebop/land", 10);
 
   ROS_INFO_ONCE("Started Waypoint Publisher.");
 
@@ -69,7 +71,7 @@ WaypointPublisherNode::~WaypointPublisherNode() {}
 
 void WaypointPublisherNode::InitializeParams(){
 
-  ros::NodeHandle pnh("~");   
+  ros::NodeHandle pnh("~");
 
   desired_wp.position.x = 0.0;
   desired_wp.position.y = 0.0;
@@ -78,8 +80,8 @@ void WaypointPublisherNode::InitializeParams(){
 
   waypoints_read = 0;
   published = 0;
-  current_time = ros::Time::now().toSec(); 
-  start_time = ros::Time::now().toSec(); 
+  current_time = ros::Time::now().toSec();
+  start_time = ros::Time::now().toSec();
   i = 0;
 
   threedNav_trajectory.position(0) = 0.0;
@@ -108,7 +110,7 @@ void WaypointPublisherNode::CommandTrajectoryCallback(const mav_msgs::CommandTra
 }
 
 void WaypointPublisherNode::threedNavCallback(const mav_msgs::CommandTrajectoryConstPtr& threed_nav_msg){
-  
+
   ROS_INFO_ONCE("Position_controller_node got first 3d Nav message.");
 
   //Convert to Eigen
@@ -143,21 +145,23 @@ void WaypointPublisherNode::OdometryCallback(const nav_msgs::OdometryConstPtr& o
   }
 
   //Launch mode
-  if(command_trajectory.snap(0)){    
-
+  if(command_trajectory.snap(0)){
+    std_msgs::Empty empty;
     desired_wp.position.x = current_gps_.pose.pose.position.x;
     desired_wp.position.y = current_gps_.pose.pose.position.y;
     desired_wp.position.z = 1.0;
     desired_wp.yaw = gps_yaw;
+    takeoff_pub.publish(empty);
   }
 
   //Land mode
-  if(command_trajectory.snap(1)){    
-
+  if(command_trajectory.snap(1)){
+    std_msgs::Empty empty;
     desired_wp.position.x = current_gps_.pose.pose.position.x;
     desired_wp.position.y = current_gps_.pose.pose.position.y;
     desired_wp.position.z = 0.05;
     desired_wp.yaw = gps_yaw;
+    land_pub.publish(empty);
   }
 
   control_mode.UpdateSwitchValue(command_trajectory.jerk(1));
@@ -182,7 +186,7 @@ void WaypointPublisherNode::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
 	const WaypointWithTime& wp = waypoints[i];
 
-	if(!published){	
+	if(!published){
 
 	printf("Publishing #%d x=%f y=%f z=%f yaw=%f, and wait for %fs. \n", (int)i, wp.wp.position.x, wp.wp.position.y, wp.wp.position.z, wp.wp.yaw, wp.waiting_time);
 
@@ -207,14 +211,14 @@ void WaypointPublisherNode::OdometryCallback(const nav_msgs::OdometryConstPtr& o
         trajectory_pub.publish(desired_wp);
 
 	current_time = ros::Time::now().toSec();
- 
+
 	}
 	else{
-	  
+
 	  i = i + 1;
 	  published = 0;
 
-	}        
+	}
 
       }
   }
@@ -255,7 +259,7 @@ void WaypointPublisherNode::OdometryCallback(const nav_msgs::OdometryConstPtr& o
 
     	desired_wp.position.x = (current_gps_.pose.pose.position.x + waypointBF(0));
     	desired_wp.position.y = (current_gps_.pose.pose.position.y + waypointBF(1));
-    	desired_wp.position.z = threedNav_trajectory.position(2);    
+    	desired_wp.position.z = threedNav_trajectory.position(2);
     	desired_wp.yaw = threedNav_trajectory.yaw;
     }
 
@@ -300,7 +304,3 @@ int main(int argc, char** argv) {
 
   return 0;
 }
-
-
-
-

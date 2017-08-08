@@ -45,10 +45,10 @@ private:
 	ros::Subscriber odometry_sub_;
 
 	ros::Publisher trajectory_pub;
-  	mav_msgs::CommandTrajectory desired_wp;
+  mav_msgs::CommandTrajectory desired_wp;
 
-  	tf::Quaternion q;
-  	double des_roll, des_pitch, des_yaw;
+  tf::Quaternion q;
+  double des_roll, des_pitch, des_yaw;
 
 	geometry_msgs::Twist empty;
 	geometry_msgs::Transform_<std::allocator<void> > lastPosition;
@@ -66,8 +66,8 @@ private:
 	GoalHandle active_goal_;
 	trajectory_msgs::MultiDOFJointTrajectory_<std::allocator<void> > toExecute;
 
-  	double current_time; 
-  	double start_time; 
+  double current_time;
+  double start_time;
 
 	void cancelCB(GoalHandle gh){
 		if (active_goal_ == gh)
@@ -78,7 +78,8 @@ private:
 				pthread_cancel(trajectoryExecutor);
 				created=0;
 			}
-			pub_topic.publish(empty);
+			mav_msgs::CommandTrajectory emptyTrajectory;
+			trajectory_pub.publish(emptyTrajectory);
 
 			// Marks the current goal as canceled.
 			active_goal_.setCanceled();
@@ -94,7 +95,8 @@ private:
 				pthread_cancel(trajectoryExecutor);
 				created=0;
 			}
-			pub_topic.publish(empty);
+			mav_msgs::CommandTrajectory emptyTrajectory;
+			trajectory_pub.publish(emptyTrajectory);
 
 			// Marks the current goal as canceled.
 			active_goal_.setCanceled();

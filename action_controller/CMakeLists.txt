@@ -46,7 +46,7 @@ catkin_package(
 
 include_directories(include)
 
-# add_library(action_controller src/actionController.cpp)
+#add_library(action_controller src/actionController.cpp)
 add_executable(action_controller src/actionController.cpp)
 target_link_libraries(action_controller ${catkin_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
