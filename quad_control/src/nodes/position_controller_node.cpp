@@ -62,10 +62,15 @@ void PositionControllerNode::Publish(){
     twist.linear.y = control_msg_.roll;
     twist.linear.z = control_msg_.thrust;
     twist.angular.z = control_msg_.yaw_rate;
-    control_msg_.thrust += 7.84;
-    control_msg_.pitch *= (20.0 * M_PI / 180.0);
-    control_msg_.roll *= (20.0 * M_PI / 180.0);
-    control_msg_.yaw_rate *= (100.0 * M_PI / 180.0);
+
+    { // Atapt the output to be used by the simulation
+      control_msg_.thrust *= 4;
+      control_msg_.thrust += 7.84;
+      control_msg_.pitch *= (20.0 * M_PI / 180.0);
+      control_msg_.roll *= (20.0 * M_PI / 180.0);
+      control_msg_.yaw_rate *= (100.0 * M_PI / 180.0);
+    }
+
     ctrl_pub_.publish(control_msg_);
     bebop_topic.publish(twist);
 
@@ -99,8 +104,8 @@ void PositionControllerNode::Run(){
     }
 
     // calc velocity
-    double timeSinceLastTf = (transformStamped.header.stamp.sec - current_gps_.header.stamp.sec) + (transformStamped.header.stamp.nsec - current_gps_.header.stamp.nsec)*0.000000001;
-    //Diff of seconds plus diff of nanoseconds (nanosec have to be divided by 10e9)
+    double timeSinceLastTf = (transformStamped.header.stamp.sec - current_gps_.header.stamp.sec) + ((int)transformStamped.header.stamp.nsec - (int)current_gps_.header.stamp.nsec)*0.000000001;
+    //Diff of seconds plus diff of nanoseconds (nanosec have to be divided by 10e9) Warn nsec are unsigned so substraction will always output unsigned so need to cast to int
 
     current_gps_.twist.twist.linear.x = (transformStamped.transform.translation.x - current_gps_.pose.pose.position.x)/timeSinceLastTf;
     current_gps_.twist.twist.linear.y = (transformStamped.transform.translation.y - current_gps_.pose.pose.position.y)/timeSinceLastTf;
@@ -114,7 +119,6 @@ void PositionControllerNode::Run(){
     current_gps_.pose.pose.position.y = transformStamped.transform.translation.y;
     current_gps_.pose.pose.position.z = transformStamped.transform.translation.z;
     current_gps_.pose.pose.orientation = transformStamped.transform.rotation;
-    printf("Youpla!\n");
     OdometryCallback();
     odom_pub_.publish(current_gps_);
 

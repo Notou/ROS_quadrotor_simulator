@@ -161,7 +161,8 @@ void PositionController::CalculatePositionControl(mav_msgs::CommandTrajectory wp
   cp = x_er * x_KP;
   ci = x_KI * dt * x_er_sum;
   cd = x_KD * current_gps.twist.twist.linear.x;
-  pitch_des = (cp - cd );
+  pitch_des = cp + ci + cd;
+  //printf("X total: %f = cp: %f + ci %f + cd: %f\n", pitch_des, cp, ci, cd);
   pitch_des = controller_utility_.limit(pitch_des, -1, 1);
 
 
@@ -173,7 +174,8 @@ void PositionController::CalculatePositionControl(mav_msgs::CommandTrajectory wp
   cp = y_er * y_KP;
   ci = y_KI * dt * y_er_sum;
   cd = y_KD * current_gps.twist.twist.linear.y;
-  roll_des = -(cp - cd);	//Positive Y axis and roll angles inversely related
+  roll_des = cp + ci +  cd;	//Positive Y axis and roll angles inversely related
+  //printf("Y total: %f = cp: %f + ci %f + cd: %f\n", roll_des, cp, ci, cd);
   roll_des = controller_utility_.limit(roll_des, -1, 1);
 
   //Z PID
@@ -184,7 +186,8 @@ void PositionController::CalculatePositionControl(mav_msgs::CommandTrajectory wp
   cp = z_er * z_KP;
   ci = z_KI * dt * z_er_sum;
   cd = z_KD * current_gps.twist.twist.linear.z;
-  thrust_des = (cp - cd) + 7.84;	//Hover is ~ 7.84N (should be (mass*9.8) but that is too large
+  thrust_des = cp + ci + cd;
+  //printf("Z total: %f = cp: %f + ci %f + cd: %f\n", thrust_des, cp, ci, cd);
   thrust_des = controller_utility_.limit(thrust_des, -1, 1);
 
   //Yaw PID
@@ -197,9 +200,17 @@ void PositionController::CalculatePositionControl(mav_msgs::CommandTrajectory wp
   cp = yaw_er * yaw_KP;
   ci = yaw_KI * dt * yaw_er_sum;
   cd = yaw_KD * current_gps.twist.twist.angular.z;
-  yaw_des = -(cp - cd);
+  yaw_des = cp + ci + cd;
+  //printf("R total: %f = cp: %f + ci %f + cd: %f  actuel: %f   voulu: %f\n", yaw_des, cp, ci, cd, gps_yaw, wp.yaw);
   yaw_des = controller_utility_.limit(yaw_des, -1, 1);
 
+
+  { // Convert to local coordinates (positions and speeds are given in a global reference frame so the PID is too)
+    double x = pitch_des;
+    double y = roll_des;
+    pitch_des =  x*cos(gps_yaw) - y*sin(gps_yaw);
+    roll_des =   x*sin(gps_yaw) + y*cos(gps_yaw);
+  }
 
   des_attitude_cmds.roll = roll_des;
   des_attitude_cmds.pitch = pitch_des;
