@@ -54,7 +54,6 @@ namespace quad_control {
     // Subscribers
     cmd_pos_sub_ = nh.subscribe("command/trajectory", 10, &WaypointPublisherNode::CommandTrajectoryCallback, this);
     odometry_sub_ = nh.subscribe("odometry", 10, &WaypointPublisherNode::OdometryCallback, this);
-    //cmd_vel_sub_ = nh.subscribe("/cmd_vel", 10, &WaypointPublisherNode::CommandVelCallback, this);
     cmd_threednav_sub_ = nh.subscribe("/cmd_3dnav", 10, &WaypointPublisherNode::threedNavCallback, this);
 
     //Publisher
@@ -73,49 +72,25 @@ namespace quad_control {
 
     ros::NodeHandle pnh("~");
 
-    desired_wp.position.x = 0.0;
-    desired_wp.position.y = 0.0;
-    desired_wp.position.z = 0.0;
-    desired_wp.yaw = 0.0;
-
     waypoints_read = 0;
     published = 0;
     current_time = ros::Time::now().toSec();
     start_time = ros::Time::now().toSec();
-    i = 0;
-
-    threedNav_trajectory.position(0) = 0.0;
-    threedNav_trajectory.position(1) = 0.0;
-    threedNav_trajectory.position(2) = 0.0;
 
     ROS_INFO_ONCE("Waypoint_publisher_node Paramters Initialized.");
 
   }
 
-  void WaypointPublisherNode::CommandVelCallback(const geometry_msgs::TwistConstPtr& command_velocity_msg){
-
-    ROS_INFO_ONCE("Position_controller_node got first Command Velocity message.");
-
-    cmd_vel = *command_velocity_msg;
-
-  }
-
   void WaypointPublisherNode::CommandTrajectoryCallback(const mav_msgs::CommandTrajectoryConstPtr& command_trajectory_msg){
-
     ROS_INFO_ONCE("Position_controller_node got first Trajectory message.");
-
     //Convert to Eigen
     mav_msgs::eigenCommandTrajectoryFromMsg(*command_trajectory_msg, &command_trajectory);
-
   }
 
   void WaypointPublisherNode::threedNavCallback(const mav_msgs::CommandTrajectoryConstPtr& threed_nav_msg){
-
     ROS_INFO_ONCE("Position_controller_node got first 3d Nav message.");
-
     //Convert to Eigen
     mav_msgs::eigenCommandTrajectoryFromMsg(*threed_nav_msg, &threedNav_trajectory);
-
   }
 
   void WaypointPublisherNode::OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg){
@@ -133,31 +108,19 @@ namespace quad_control {
     if(fabs(command_trajectory.position(0)) >= .01){
       desired_wp.position.x = current_gps_.pose.pose.position.x + command_trajectory.position(0);
     }
-    else{
-      desired_wp.position.x = desired_wp.position.x;
-    }
     //Maintain roll while maneuvering
     if(fabs(command_trajectory.position(1)) >= .01){
       desired_wp.position.y = current_gps_.pose.pose.position.y + command_trajectory.position(1);
-    }
-    else{
-      desired_wp.position.y = desired_wp.position.y;
     }
 
     //Maintain yaw while maneuvering
     if(fabs(command_trajectory.yaw) >= .01){
       desired_wp.yaw = gps_yaw + command_trajectory.yaw;
     }
-    else{
-      desired_wp.yaw = desired_wp.yaw;
-    }
 
     //Maintain altitude while maneuvering
     if(fabs(command_trajectory.position(2)) >= .01){
       desired_wp.position.z = current_gps_.pose.pose.position.z + command_trajectory.position(2);
-    }
-    else{
-      desired_wp.position.z = desired_wp.position.z;
     }
 
     //Launch mode
@@ -212,11 +175,8 @@ namespace quad_control {
 
         if((current_time-start_time) < wp.waiting_time){
 
-          //Rotate into BF
-          //waypointBF = control_mode.rotateGFtoBF(wp.wp.position.x-current_gps_.pose.pose.position.x, wp.wp.position.y-current_gps_.pose.pose.position.y, wp.wp.position.z, 0, 0, gps_yaw);
-
-          desired_wp.position.x = (current_gps_.pose.pose.position.x + waypointBF(0));
-          desired_wp.position.y = (current_gps_.pose.pose.position.y + waypointBF(1));
+          desired_wp.position.x = wp.wp.position.x;
+          desired_wp.position.y = wp.wp.position.y;
           desired_wp.position.z = wp.wp.position.z;
           desired_wp.yaw = wp.wp.yaw;
 
@@ -230,8 +190,7 @@ namespace quad_control {
 
         }
         else{
-
-          i = i + 1;
+          i++;
           published = 0;
 
         }
@@ -243,12 +202,6 @@ namespace quad_control {
 
       ROS_INFO("Autonomous Mode triggered");
 
-      // Calculate Deisred Position from Vel Cmd
-      //desired_wp.position.x = current_gps_.pose.pose.position.x + cmd_vel.linear.x;
-      //desired_wp.position.y = current_gps_.pose.pose.position.y + cmd_vel.linear.y;
-      //desired_wp.position.z = desired_wp.position.z + cmd_vel.linear.z;
-      //desired_wp.yaw = gps_yaw + cmd_vel.angular.z;
-
       desired_wp.jerk.x = 1;	//Set flag for position controller
 
       desired_wp.header.stamp = ros::Time::now();
@@ -259,19 +212,10 @@ namespace quad_control {
 
       ROS_INFO("3d Navigation Mode triggered");
 
-
-      //Rotate into BF
-      //waypointBF = control_mode.rotateGFtoBF(threedNav_trajectory.position(0)-current_gps_.pose.pose.position.x, threedNav_trajectory.position(1)-current_gps_.pose.pose.position.y, threedNav_trajectory.position(2), 0, 0, gps_yaw);
-
       if( (threedNav_trajectory.position(0)==0.0) && (threedNav_trajectory.position(1)==0.0) && (threedNav_trajectory.position(2)==0.0)){
-        desired_wp.position.x = current_gps_.pose.pose.position.x;
-        desired_wp.position.y = current_gps_.pose.pose.position.y;
-        desired_wp.position.z = current_gps_.pose.pose.position.z;
-        desired_wp.yaw = gps_yaw;
+        return;
       }
       else{
-        //desired_wp.position.x = threedNav_trajectory.position(0);
-        //desired_wp.position.y = threedNav_trajectory.position(1);
 
         desired_wp.position.x = threedNav_trajectory.position(0);
         desired_wp.position.y = threedNav_trajectory.position(1);
