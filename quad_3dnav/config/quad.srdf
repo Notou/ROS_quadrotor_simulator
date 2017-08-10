@@ -14,7 +14,7 @@
         <joint name="virtual_joint" />
     </group>
     <!--VIRTUAL JOINT: Purpose: this element defines a virtual joint between a robot link and an external frame of reference (considered fixed with respect to the robot)-->
-    <virtual_joint name="virtual_joint" type="floating" parent_frame="map" child_link="cam0" />
+    <virtual_joint name="virtual_joint" type="floating" parent_frame="world" child_link="cam0" />
     <!--PASSIVE JOINT: Purpose: this element is used to mark joints that are not actuated-->
     <passive_joint name="quad/ground_truth/odometry_sensorgt_joint" />
     <passive_joint name="quad/imu_joint" />
