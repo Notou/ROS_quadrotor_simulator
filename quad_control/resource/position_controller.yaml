@@ -8,6 +8,6 @@
 # z_PID: {P: 3, I: 0.25, D: -3, I_max: 2.0 }
 # yaw_PID: {P: 0.2, I: 0, D: 0, I_max: 2.0 }
 x_PID: {P: 1.5, I: 0, D: -2, I_max: 2.0 }
-y_PID: {P: -1.5, I: 0, D: 2, I_max: 2.0 }
-z_PID: {P: 1, I: 0, D: -2, I_max: 2.0 }
+y_PID: {P: -1.5, I: 0, D: 2, I_max: 2.0 } #Positive Y axis and roll angles inversely related
+z_PID: {P: 1, I: 0.2, D: -2, I_max: 2.0 }
 yaw_PID: {P: -0.5, I: 0, D: 0.5, I_max: 2.0 }

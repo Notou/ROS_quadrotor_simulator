@@ -15,7 +15,6 @@
     <node name="position_controller_node" pkg="quad_control" type="position_controller_node" output="screen">
       <rosparam command="load" file="$(find quad_gazebo)/resource/kit_c.yaml" />
       <rosparam command="load" file="$(find quad_control)/resource/position_controller.yaml" />
-      <remap from="/cmd_vel" to="/bebop/cmd_vel"/>
     </node>
     <node name="attitude_controller_node" pkg="quad_control" type="attitude_controller_node" output="screen">
       <rosparam command="load" file="$(find quad_gazebo)/resource/kit_c.yaml" />
@@ -37,69 +36,69 @@
     enable_camera:=$(arg enable_camera)
     enable_VI_sensor:=$(arg enable_VI_sensor)
     log_file:=$(arg log_file)"
-  />
+    />
 
-  <!-- We do not have a robot connected, so publish fake joint states -->
-  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" ></node>
+    <!-- We do not have a robot connected, so publish fake joint states -->
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" ></node>
 
-  <!-- Given the published joint states, publish tf for the robot links -->
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+    <!-- Given the published joint states, publish tf for the robot links -->
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
 
-  <!--rosrun action_controller action_controller -->
+    <!--rosrun action_controller action_controller -->
     <node name="action_controller" pkg="action_controller" type="action_controller" ></node>
 
-  <!-- Run the main MoveIt executable without trajectory execution (we do not have controllers configured by default) -->
-  <include file="$(find quad_3dnav)/launch/move_group.launch">
-    <arg name="allow_trajectory_execution" value="true"/>
-    <arg name="fake_execution" value="false"/>
-    <arg name="info" value="true"/>
-    <arg name="debug" value="false"/>
-    <arg name="db" default="false" />
-  </include>
+    <!-- Run the main MoveIt executable without trajectory execution (we do not have controllers configured by default) -->
+    <include file="$(find quad_3dnav)/launch/move_group.launch">
+      <arg name="allow_trajectory_execution" value="true"/>
+      <arg name="fake_execution" value="false"/>
+      <arg name="info" value="true"/>
+      <arg name="debug" value="false"/>
+      <arg name="db" default="false" />
+    </include>
 
-  <node pkg="tf" type="static_transform_publisher" name="slam_to_bebop"
-    args="0.0 0.0 0.0 0.0 0.0 0.0 cam0 /base_link 100" />
-
-
-  <!-- RTAB Map -->
-  <!-- WARNING : Database is automatically deleted on each startup -->
-  <!--           See "delete_db_on_start" option below... -->
-
-  <group ns="rtabmap">
-    <!-- SLAM (robot side) -->
-    <!-- args: "delete_db_on_start" -->
-    <node name="rtabmap" pkg="rtabmap_ros" type="rtabmap" output="log" args="--delete_db_on_start">
-	  <param name="frame_id" type="string" value="cam0"/>
-    <param name="odom_frame_id" type="string" value="map"/>
-    <param name="map_frame_id" type="string" value="world"/>
-    <param name="wait_for_transform_duration" type="double" value="0.4"/>
-	  <param name="wait_for_transform" type="bool" value="true"/>
-	  <param name="subscribe_depth" type="bool" value="true"/>
-	  <param name="subscribe_laserScan" type="bool" value="false"/>
-
-   	  <!-- Inputs -->
-	  <!-- <remap from="odom" to="/quad/ground_truth/odometry"/> -->
-	  <remap from="rgb/image" to="/left_rgb_rect/image_rect_color"/>
-	  <remap from="depth/image" to="/depth_map/image"/>
-	  <remap from="rgb/camera_info" to="/left_rgb_rect/camera_info"/>
-
-	  <!-- RTAB-Map's parameters: do "rosrun rtabmap rtabmap (double-dash)params" to see the list of available parameters. -->
-    <param name="Rtabmap/DetectionRate" type="string" value="10"/>
-	  <param name="RGBD/NeighborLinkRefining" type="string" value="false"/>  <!-- Do odometry correction with consecutive laser scans -->
-	  <param name="RGBD/ProximityBySpace" type="string" value="false"/>  <!-- Local loop closure detection (using estimated position) with locations in WM -->
-	  <param name="RGBD/ProximityByTime" type="string" value="false"/>   <!-- Local loop closure detection with locations in STM -->
-	  <param name="RGBD/OptimizeFromGraphEnd" type="string" value="true"/>
-	  <param name="Reg/Strategy" type="string" value="1"/>                      <!-- 0=No ICP, 1=ICP 3D, 2=ICP 2D -->
-	  <param name="Vis/InlierDistance" type="string" value="0.3"/>          <!-- 3D visual words correspondence distance -->
-    <param name="RGBD/OptimizeFromGraphEnd" type="string" value="false"/>    <!-- Optimize graph from initial node so /map -> /odom transform will be generated -->
-    <param name="Grid/CellSize" type="string" value="0.1"/>
-    <param name="Grid/GroundIsObstacle" type="string" value="true"/>
-    <param name="Grid/NormalsSegmentation" type="string" value="false"/>
-    <param name="GridGlobal/Eroded" type="string" value="true"/>
-    </node>
-
-  </group>
+    <node pkg="tf" type="static_transform_publisher" name="slam_to_bebop"
+      args="0.0 0.0 0.0 0.0 0.0 0.0 cam0 /base_link 100" />
 
 
+      <!-- RTAB Map -->
+      <!-- WARNING : Database is automatically deleted on each startup -->
+      <!--           See "delete_db_on_start" option below... -->
 
-</launch>
+      <group ns="rtabmap">
+        <!-- SLAM (robot side) -->
+        <!-- args: "delete_db_on_start" -->
+        <node name="rtabmap" pkg="rtabmap_ros" type="rtabmap" output="log" args="--delete_db_on_start">
+          <param name="frame_id" type="string" value="cam0"/>
+          <param name="odom_frame_id" type="string" value="map"/>
+          <param name="map_frame_id" type="string" value="world"/>
+          <param name="wait_for_transform_duration" type="double" value="0.4"/>
+          <param name="wait_for_transform" type="bool" value="true"/>
+          <param name="subscribe_depth" type="bool" value="true"/>
+          <param name="subscribe_laserScan" type="bool" value="false"/>
+          
+          <!-- Inputs -->
+          <!-- <remap from="odom" to="/quad/ground_truth/odometry"/> -->
+          <remap from="rgb/image" to="/left_rgb_rect/image_rect_color"/>
+          <remap from="depth/image" to="/depth_map/image"/>
+          <remap from="rgb/camera_info" to="/left_rgb_rect/camera_info"/>
+
+          <!-- RTAB-Map's parameters: do "rosrun rtabmap rtabmap (double-dash)params" to see the list of available parameters. -->
+          <param name="Rtabmap/DetectionRate" type="string" value="10"/>
+          <param name="RGBD/NeighborLinkRefining" type="string" value="false"/>  <!-- Do odometry correction with consecutive laser scans -->
+          <param name="RGBD/ProximityBySpace" type="string" value="false"/>  <!-- Local loop closure detection (using estimated position) with locations in WM -->
+          <param name="RGBD/ProximityByTime" type="string" value="false"/>   <!-- Local loop closure detection with locations in STM -->
+          <param name="RGBD/OptimizeFromGraphEnd" type="string" value="true"/>
+          <param name="Reg/Strategy" type="string" value="1"/>                      <!-- 0=No ICP, 1=ICP 3D, 2=ICP 2D -->
+          <param name="Vis/InlierDistance" type="string" value="0.3"/>          <!-- 3D visual words correspondence distance -->
+          <param name="RGBD/OptimizeFromGraphEnd" type="string" value="false"/>    <!-- Optimize graph from initial node so /map -> /odom transform will be generated -->
+          <param name="Grid/CellSize" type="string" value="0.3"/>
+          <param name="Grid/GroundIsObstacle" type="string" value="true"/>
+          <param name="Grid/NormalsSegmentation" type="string" value="false"/>
+          <param name="GridGlobal/Eroded" type="string" value="true"/>
+        </node>
+
+      </group>
+
+
+
+    </launch>
