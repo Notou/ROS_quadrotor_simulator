@@ -16,10 +16,6 @@
       <rosparam command="load" file="$(find quad_gazebo)/resource/kit_c.yaml" />
       <rosparam command="load" file="$(find quad_control)/resource/position_controller.yaml" />
     </node>
-    <node name="attitude_controller_node" pkg="quad_control" type="attitude_controller_node" output="screen">
-      <rosparam command="load" file="$(find quad_gazebo)/resource/kit_c.yaml" />
-      <rosparam command="load" file="$(find quad_control)/resource/attitude_controller.yaml" />
-    </node>
     <node name="waypoint_node" pkg="quad_control" type="waypoint_publisher_node" output="screen"/>
   </group>
 
