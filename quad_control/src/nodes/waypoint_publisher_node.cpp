@@ -55,6 +55,7 @@ namespace quad_control {
     cmd_pos_sub_ = nh.subscribe("command/trajectory", 10, &WaypointPublisherNode::CommandTrajectoryCallback, this);
     odometry_sub_ = nh.subscribe("odometry", 10, &WaypointPublisherNode::OdometryCallback, this);
     cmd_threednav_sub_ = nh.subscribe("/cmd_3dnav", 10, &WaypointPublisherNode::threedNavCallback, this);
+    quality_sub_ = nh.subscribe("/quality", 10, &WaypointPublisherNode::qualityCallback, this);
 
     //Publisher
     trajectory_pub = nh.advertise<mav_msgs::CommandTrajectory>("command/waypoint", 10);
@@ -74,28 +75,33 @@ namespace quad_control {
 
     waypoints_read = 0;
     published = 0;
+    qualityState = 1;
     current_time = ros::Time::now().toSec();
     start_time = ros::Time::now().toSec();
 
-    ROS_INFO_ONCE("Waypoint_publisher_node Paramters Initialized.");
+    ROS_INFO("Waypoint_publisher_node Paramters Initialized.");
 
   }
 
   void WaypointPublisherNode::CommandTrajectoryCallback(const mav_msgs::CommandTrajectoryConstPtr& command_trajectory_msg){
-    ROS_INFO_ONCE("Position_controller_node got first Trajectory message.");
+    //ROS_INFO_ONCE("Position_controller_node got first Trajectory message.");
     //Convert to Eigen
     mav_msgs::eigenCommandTrajectoryFromMsg(*command_trajectory_msg, &command_trajectory);
   }
 
   void WaypointPublisherNode::threedNavCallback(const mav_msgs::CommandTrajectoryConstPtr& threed_nav_msg){
-    ROS_INFO_ONCE("Position_controller_node got first 3d Nav message.");
+    //ROS_INFO_ONCE("Position_controller_node got first 3d Nav message.");
     //Convert to Eigen
     mav_msgs::eigenCommandTrajectoryFromMsg(*threed_nav_msg, &threedNav_trajectory);
   }
 
+  void WaypointPublisherNode::qualityCallback(slamdunk_msgs::QualityStamped::ConstPtr const& quality){
+    qualityState = (*quality).quality.value;
+  }
+
   void WaypointPublisherNode::OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg){
 
-    ROS_INFO_ONCE("Position_controller_node got first GPS message.");
+    //ROS_INFO_ONCE("Position_controller_node got first GPS message.");
 
     current_gps_ = *odometry_msg;
 
@@ -106,16 +112,16 @@ namespace quad_control {
 
     //Maintain pitch while maneuvering
     if(fabs(command_trajectory.position(0)) >= .01){
-      desired_wp.position.x = current_gps_.pose.pose.position.x + command_trajectory.position(0);
+      desired_wp.position.x = current_gps_.pose.pose.position.x + command_trajectory.position(0)/4;
     }
     //Maintain roll while maneuvering
     if(fabs(command_trajectory.position(1)) >= .01){
-      desired_wp.position.y = current_gps_.pose.pose.position.y + command_trajectory.position(1);
+      desired_wp.position.y = current_gps_.pose.pose.position.y + command_trajectory.position(1)/4;
     }
 
     //Maintain yaw while maneuvering
     if(fabs(command_trajectory.yaw) >= .01){
-      desired_wp.yaw = gps_yaw + command_trajectory.yaw;
+      desired_wp.yaw = gps_yaw + command_trajectory.yaw/4;
     }
 
     //Maintain altitude while maneuvering
@@ -125,22 +131,33 @@ namespace quad_control {
 
     //Launch mode
     if(command_trajectory.snap(0)){
+      printf("Taking off!\n");
       std_msgs::Empty empty;
       desired_wp.position.x = current_gps_.pose.pose.position.x;
       desired_wp.position.y = current_gps_.pose.pose.position.y;
       desired_wp.position.z = 1.0;
       desired_wp.yaw = gps_yaw;
+      desired_wp.jerk.x = 1;	//Set flag for position controller
       takeoff_pub.publish(empty);
+
+      command_trajectory.snap(0)=0;//reset command
     }
 
+    if(qualityState == 0 || qualityState >= 3){
+      printf("Bad slam quality: %d\n", qualityState);
+      command_trajectory.snap(1)=1;
+    }
     //Land mode
     if(command_trajectory.snap(1)){
+      printf("Landing\n" );
       std_msgs::Empty empty;
       desired_wp.position.x = current_gps_.pose.pose.position.x;
       desired_wp.position.y = current_gps_.pose.pose.position.y;
       desired_wp.position.z = 0.0;
       desired_wp.yaw = gps_yaw;
+      desired_wp.jerk.x = 0;	//Set flag for position controller
       land_pub.publish(empty);
+      command_trajectory.snap(1)=0; //reset command
     }
 
     control_mode.UpdateSwitchValue(command_trajectory.jerk(1));
@@ -180,11 +197,9 @@ namespace quad_control {
           desired_wp.position.z = wp.wp.position.z;
           desired_wp.yaw = wp.wp.yaw;
 
-          desired_wp.jerk.x = 1;
 
           desired_wp.header.stamp = ros::Time::now();
           desired_wp.header.frame_id = "desired_mission_frame";
-          trajectory_pub.publish(desired_wp);
 
           current_time = ros::Time::now().toSec();
 
@@ -202,11 +217,10 @@ namespace quad_control {
 
       ROS_INFO("Autonomous Mode triggered");
 
-      desired_wp.jerk.x = 1;	//Set flag for position controller
+
 
       desired_wp.header.stamp = ros::Time::now();
       desired_wp.header.frame_id = "desired_auto_frame";
-      trajectory_pub.publish(desired_wp);
     }
     else if(threednav_mode.GetSwitchValue()){
 
@@ -223,11 +237,9 @@ namespace quad_control {
         desired_wp.yaw = threedNav_trajectory.yaw;
       }
 
-      desired_wp.jerk.x = 1;	//Set flag for position controller
 
       desired_wp.header.stamp = ros::Time::now();
       desired_wp.header.frame_id = "3dnav_mission_frame";
-      trajectory_pub.publish(desired_wp);
     }
     //Simple GPS Mode or Mission Mode disabled
     else{
@@ -241,14 +253,14 @@ namespace quad_control {
       //modes
       desired_wp.snap.x = command_trajectory.snap(0);	// takeoff
       desired_wp.snap.y = command_trajectory.snap(1);	// land
-      desired_wp.jerk.x = command_trajectory.jerk(0);	//enable GPS
+      //desired_wp.jerk.x = command_trajectory.jerk(0);	//enable GPS
       desired_wp.jerk.y = 0.0;	// enable mission
 
       desired_wp.header.stamp = ros::Time::now();
       desired_wp.header.frame_id = "desired_waypoint_frame";
-      trajectory_pub.publish(desired_wp);
-    }
 
+    }
+    trajectory_pub.publish(desired_wp);
   }
 
 }

@@ -19,7 +19,7 @@
 */
 
 #define wrap_180(x) (x < -M_PI ? x+(2*M_PI) : (x > M_PI ? x - (2*M_PI): x))
-
+#define stick_0(x) (x < -0.02 ? x : (x > 0.02 ? x: 0))
 #include "quad_control/quad_controller.h"
 
 #include "quad_control/parameters_ros.h"
@@ -155,50 +155,52 @@ namespace quad_control {
 
     //X PID
     x_er = wp.position.x - gps_x;
-    if(abs(x_er) < x_KI_max){
-      x_er_sum = x_er_sum + x_er;
-    }
+    x_er_sum = x_er_sum + x_er * dt;
+    x_er_sum = controller_utility_.limit(x_er_sum, -1 * x_KI_max, x_KI_max);
+    ROS_INFO("x %f max %f, y %f max %f, z %f max %f, w %f max %f\n", x_er_sum, x_KI_max, y_er_sum, y_KI_max, z_er_sum, z_KI_max, yaw_er_sum, yaw_KI_max );
     cp = x_er * x_KP;
-    ci = x_KI * dt * x_er_sum;
+    ci = x_KI * x_er_sum;
     cd = x_KD * current_gps.twist.twist.linear.x;
     pitch_des = cp + ci + cd;
-    pitch_des = controller_utility_.limit(pitch_des, -1, 1);
+    pitch_des = controller_utility_.limit(pitch_des, -0.5, 0.5);
+    printf("cp: %f, ci: %f, cd: %f    error: %f, target: %f, current: %f\n", cp, ci, cd, x_er, wp.position.x, gps_x);
 
 
     //Y PID
     y_er = wp.position.y - gps_y;
-    if(abs(y_er) < y_KI_max){
-      y_er_sum = y_er_sum + y_er;
-    }
+    y_er_sum = y_er_sum + y_er * dt;
+    y_er_sum = controller_utility_.limit(y_er_sum, -1 * y_KI_max, y_KI_max);
+
     cp = y_er * y_KP;
-    ci = y_KI * dt * y_er_sum;
+    ci = y_KI * y_er_sum;
     cd = y_KD * current_gps.twist.twist.linear.y;
     roll_des = cp + ci +  cd;	//Positive Y axis and roll angles inversely related
-    roll_des = controller_utility_.limit(roll_des, -1, 1);
+    roll_des = controller_utility_.limit(roll_des, -0.5, 0.5);
+    printf("cp: %f, ci: %f, cd: %f    error: %f, target: %f, current: %f\n", cp, ci, cd, y_er, wp.position.y, gps_y);
 
     //Z PID
     z_er = wp.position.z - gps_z;
-    if(abs(z_er) < z_KI_max){
-      z_er_sum = z_er_sum + z_er;
-    }
+    z_er_sum = z_er_sum + z_er * dt;
+    z_er_sum = controller_utility_.limit(z_er_sum, -1 * z_KI_max, z_KI_max);
+
     cp = z_er * z_KP;
-    ci = z_KI * dt * z_er_sum;
+    ci = z_KI * z_er_sum;
     cd = z_KD * current_gps.twist.twist.linear.z;
     thrust_des = cp + ci + cd;
-    thrust_des = controller_utility_.limit(thrust_des, -1, 1);
+    thrust_des = controller_utility_.limit(thrust_des, -0.5, 0.5);
+    printf("cp: %f, ci: %f, cd: %f    error: %f, target: %f, current: %f\n", cp, ci, cd, z_er, wp.position.z, gps_z);
 
     //Yaw PID
     yaw_er = wrap_180(wp.yaw - gps_yaw);
+    yaw_er_sum = yaw_er_sum + yaw_er * dt;
+    yaw_er_sum = controller_utility_.limit(yaw_er_sum, -1 * yaw_KI_max, yaw_KI_max);
 
-    if(abs(yaw_er) < yaw_KI_max){
-      yaw_er_sum = yaw_er_sum + yaw_er;
-    }
     cp = yaw_er * yaw_KP;
-    ci = yaw_KI * dt * yaw_er_sum;
+    ci = yaw_KI * yaw_er_sum;
     cd = yaw_KD * current_gps.twist.twist.angular.z;
     yaw_des = cp + ci + cd;
     yaw_des = controller_utility_.limit(yaw_des, -1, 1);
-
+    printf("cp: %f, ci: %f, cd: %f    error: %f, target: %f, current: %f\n", cp, ci, cd, yaw_er, wp.yaw, gps_yaw);
 
     { // Convert to local coordinates (positions and speeds are given in a global reference frame so the PID is too)
       double x = pitch_des;
@@ -206,6 +208,11 @@ namespace quad_control {
       pitch_des =  x*cos(gps_yaw) - y*sin(gps_yaw);
       roll_des =   x*sin(gps_yaw) + y*cos(gps_yaw);
     }
+
+    roll_des = stick_0(roll_des);
+    pitch_des = stick_0(pitch_des);
+    thrust_des = stick_0(thrust_des);
+    yaw_des = stick_0(yaw_des);
 
     des_attitude_cmds.roll = roll_des;
     des_attitude_cmds.pitch = pitch_des;

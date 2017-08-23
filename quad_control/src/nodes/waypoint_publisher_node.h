@@ -43,6 +43,8 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_datatypes.h>
 
+#include <slamdunk_msgs/QualityStamped.h>
+
 #include "quad_control/quad_controller.h"
 
 namespace quad_control {
@@ -82,6 +84,7 @@ class WaypointPublisherNode {
   ros::Subscriber cmd_pos_sub_;
   ros::Subscriber odometry_sub_;
   ros::Subscriber cmd_threednav_sub_;
+  ros::Subscriber quality_sub_;
 
   //Publisher
   ros::Publisher trajectory_pub;
@@ -111,11 +114,12 @@ class WaypointPublisherNode {
   size_t i;
   double start_time;
   double current_time;
+  int qualityState;
 
   void CommandTrajectoryCallback(const mav_msgs::CommandTrajectoryConstPtr& command_trajectory_msg);
   void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
   void threedNavCallback(const mav_msgs::CommandTrajectoryConstPtr& threed_nav_msg);
-
+  void qualityCallback(slamdunk_msgs::QualityStamped::ConstPtr const& quality);
 };
 
 
