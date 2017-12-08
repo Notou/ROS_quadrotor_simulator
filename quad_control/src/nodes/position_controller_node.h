@@ -35,6 +35,7 @@
 #include <tf2_ros/transform_listener.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <bebop_msgs/Ardrone3PilotingStateFlyingStateChanged.h>
 
 #include "quad_control/quad_controller.h"
 
@@ -57,6 +58,7 @@ class PositionControllerNode {
 
   //Subscribers
   ros::Subscriber cmd_trajectory_sub_;
+  ros::Subscriber landed_sub;
 
   ros::Publisher ctrl_pub_;
   ros::Publisher odom_pub_;
@@ -69,9 +71,11 @@ class PositionControllerNode {
 
   rotors_control::VehicleParameters vehicle_parameters_;
 
+  int flyingState;
+
   void WaypointCallback(const mav_msgs::CommandTrajectoryConstPtr& trajectory_reference_msg);
   void OdometryCallback();
-
+  void LandedCallback(const bebop_msgs::Ardrone3PilotingStateFlyingStateChangedPtr& state_ptr);
 };
 
 }

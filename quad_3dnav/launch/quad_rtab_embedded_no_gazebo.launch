@@ -20,18 +20,12 @@
   </group>
 
   <arg name="name" default="quad"/>
-  <arg name="model" default="$(find quad_description)/urdf/kit_c_base.xacro"/>
-  <arg name="enable_camera" default="false"/>
-  <arg name="enable_VI_sensor" default="true"/>
+  <arg name="model" default="$(find quad_description)/urdf/kit_c_irl.xacro"/>
+
 
   <!-- send the robot XML to param server -->
   <param name="robot_description" command="
-    $(find xacro)/xacro --inorder '$(arg model)'
-    enable_logging:=$(arg enable_logging)
-    enable_ground_truth:=$(arg enable_ground_truth)
-    enable_camera:=$(arg enable_camera)
-    enable_VI_sensor:=$(arg enable_VI_sensor)
-    log_file:=$(arg log_file)"
+    $(find xacro)/xacro --inorder '$(arg model)'"
     />
 
     <!-- We do not have a robot connected, so publish fake joint states -->
