@@ -29,10 +29,7 @@
 #include <std_srvs/Empty.h>
 #include <std_msgs/Empty.h>
 
-#include <mav_msgs/CommandAttitudeThrust.h>
 #include <mav_msgs/CommandTrajectory.h>
-#include <mav_msgs/eigen_mav_msgs.h>
-#include <mav_msgs/conversions.h>
 #include <planning_msgs/WayPoint.h>
 #include <planning_msgs/eigen_planning_msgs.h>
 #include <planning_msgs/conversions.h>
@@ -92,8 +89,8 @@ class WaypointPublisherNode {
   ros::Publisher land_pub;
 
   //Waypoint variables
-  mav_msgs::EigenCommandTrajectory command_trajectory;
-  mav_msgs::EigenCommandTrajectory threedNav_trajectory;
+  mav_msgs::CommandTrajectory command_trajectory;
+  mav_msgs::CommandTrajectory threedNav_trajectory;
   mav_msgs::CommandTrajectory desired_wp;
   nav_msgs::Odometry current_gps_;
 

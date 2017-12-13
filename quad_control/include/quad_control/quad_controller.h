@@ -20,8 +20,7 @@
 
 #include <Eigen/Eigen>
 
-#include <mav_msgs/conversions.h>
-#include <mav_msgs/eigen_mav_msgs.h>
+#include <mav_msgs/CommandTrajectory.h>
 #include <mav_msgs/CommandMotorSpeed.h>
 #include <mav_msgs/CommandRollPitchYawrateThrust.h>
 #include <mav_msgs/MotorSpeed.h>
@@ -37,7 +36,6 @@
 #include <tf/transform_datatypes.h>
 #include <cmath>
 
-#include "quad_control/parameters_ros.h"
 
 namespace quad_control {
 
@@ -147,7 +145,6 @@ class AttitudeController {
 
   void CalculateMotorCommands(Eigen::VectorXd control_inputs, Eigen::VectorXd* des_rotor_velocities_output);
 
-  rotors_control::VehicleParameters vehicle_parameters_;
   mav_msgs::CommandRollPitchYawrateThrust current_control_cmd_;
   sensor_msgs::Imu current_imu_;
   Eigen::VectorXd desired_angular_rates;

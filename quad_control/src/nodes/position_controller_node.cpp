@@ -37,7 +37,6 @@ namespace quad_control {
 
     ros::NodeHandle pnh("~");
 
-    GetVehicleParameters(pnh, &vehicle_parameters_);
 
     position_controller_.InitializeParameters(pnh);
 

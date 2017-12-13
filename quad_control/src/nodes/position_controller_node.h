@@ -69,7 +69,6 @@ class PositionControllerNode {
   mav_msgs::CommandRollPitchYawrateThrust control_msg_;
   mav_msgs::CommandTrajectory wp;
 
-  rotors_control::VehicleParameters vehicle_parameters_;
 
   int flyingState;
 

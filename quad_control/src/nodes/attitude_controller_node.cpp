@@ -18,14 +18,12 @@
 
 #include "attitude_controller_node.h"
 
-#include "quad_control/parameters_ros.h"
 
 
 // Variables
 mav_msgs::CommandRollPitchYawrateThrust current_control_cmd_;
 sensor_msgs::Imu current_imu_;
 
-rotors_control::VehicleParameters vehicle_parameters_;
 
 
 namespace quad_control {
@@ -50,9 +48,7 @@ AttitudeControllerNode::~AttitudeControllerNode() {}
 
 void AttitudeControllerNode::InitializeParams(){
 
-  ros::NodeHandle pnh("~");   
-
-  GetVehicleParameters(pnh, &vehicle_parameters_);
+  ros::NodeHandle pnh("~");
 
   attitude_controller_.InitializeParameters(pnh);
 

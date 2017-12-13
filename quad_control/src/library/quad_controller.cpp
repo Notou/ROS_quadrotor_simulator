@@ -22,7 +22,6 @@
 #define stick_0(x) (x < -0.002 ? x : (x > 0.002 ? x: 0))
 #include "quad_control/quad_controller.h"
 
-#include "quad_control/parameters_ros.h"
 
 namespace quad_control {
 
@@ -98,26 +97,28 @@ namespace quad_control {
     last_time = ros::Time::now();
 
     //Altitude PID
-    rotors_control::GetRosParameter(pnh,"x_PID/P", x_KP, &x_KP);
-    rotors_control::GetRosParameter(pnh,"x_PID/I", x_KI, &x_KI);
-    rotors_control::GetRosParameter(pnh,"x_PID/I_max", x_KI_max, &x_KI_max);
-    rotors_control::GetRosParameter(pnh,"x_PID/D", x_KD, &x_KD);
+    pnh.getParam("x_PID/P", x_KP);
+    pnh.getParam("x_PID/I", x_KI);
+    pnh.getParam("x_PID/I_max", x_KI_max);
+    pnh.getParam("x_PID/D", x_KD);
 
-    rotors_control::GetRosParameter(pnh,"y_PID/P", y_KP, &y_KP);
-    rotors_control::GetRosParameter(pnh,"y_PID/I", y_KI, &y_KI);
-    rotors_control::GetRosParameter(pnh,"y_PID/I_max", y_KI_max, &y_KI_max);
-    rotors_control::GetRosParameter(pnh,"y_PID/D", y_KD, &y_KD);
+    pnh.getParam("y_PID/P", y_KP);
+    pnh.getParam("y_PID/I", y_KI);
+    pnh.getParam("y_PID/I_max", y_KI_max);
+    pnh.getParam("y_PID/D", y_KD);
 
-    rotors_control::GetRosParameter(pnh,"z_PID/P", z_KP, &z_KP);
-    rotors_control::GetRosParameter(pnh,"z_PID/I", z_KI, &z_KI);
-    rotors_control::GetRosParameter(pnh,"z_PID/I_max", z_KI_max, &z_KI_max);
-    rotors_control::GetRosParameter(pnh,"z_PID/D", z_KD, &z_KD);
+    pnh.getParam("z_PID/P", z_KP);
+    pnh.getParam("z_PID/I", z_KI);
+    pnh.getParam("z_PID/I_max", z_KI_max);
+    pnh.getParam("z_PID/D", z_KD);
 
-    rotors_control::GetRosParameter(pnh,"yaw_PID/P", yaw_KP, &yaw_KP);
-    rotors_control::GetRosParameter(pnh,"yaw_PID/I", yaw_KI, &yaw_KI);
-    rotors_control::GetRosParameter(pnh,"yaw_PID/I_max", yaw_KI_max, &yaw_KI_max);
-    rotors_control::GetRosParameter(pnh,"yaw_PID/D", yaw_KD, &yaw_KD);
-    rotors_control::GetRosParameter(pnh,"acceleration_theshold", acceleration_theshold, &acceleration_theshold);
+    pnh.getParam("yaw_PID/P", yaw_KP);
+    pnh.getParam("yaw_PID/I", yaw_KI);
+    pnh.getParam("yaw_PID/I_max", yaw_KI_max);
+    pnh.getParam("yaw_PID/D", yaw_KD);
+
+    pnh.getParam("acceleration_theshold", acceleration_theshold);
+
 
     x_er = 0;
     y_er = 0;
@@ -260,22 +261,23 @@ namespace quad_control {
     last_time = ros::Time::now();
 
     //Roll PID
-    rotors_control::GetRosParameter(pnh,"roll_PID/P", roll_KP, &roll_KP);
-    rotors_control::GetRosParameter(pnh,"roll_PID/I", roll_KI, &roll_KI);
-    rotors_control::GetRosParameter(pnh,"roll_PID/I_max", roll_KI_max, &roll_KI_max);
-    rotors_control::GetRosParameter(pnh,"roll_PID/D", roll_KD, &roll_KD);
+    pnh.getParam("roll_PID/P", roll_KP);
+    pnh.getParam("roll_PID/I", roll_KI);
+    pnh.getParam("roll_PID/I_max", roll_KI_max);
+    pnh.getParam("roll_PID/D", roll_KD);
 
     //Pitch PID
-    rotors_control::GetRosParameter(pnh,"pitch_PID/P", pitch_KP, &pitch_KP);
-    rotors_control::GetRosParameter(pnh,"pitch_PID/I", pitch_KI, &pitch_KI);
-    rotors_control::GetRosParameter(pnh,"pitch_PID/I_max", pitch_KI_max, &pitch_KI_max);
-    rotors_control::GetRosParameter(pnh,"pitch_PID/D", pitch_KD, &pitch_KD);
+    pnh.getParam("pitch_PID/P", pitch_KP);
+    pnh.getParam("pitch_PID/I", pitch_KI);
+    pnh.getParam("pitch_PID/I_max", pitch_KI_max);
+    pnh.getParam("pitch_PID/D", pitch_KD);
 
     //Yaw PID
-    rotors_control::GetRosParameter(pnh,"yaw_PID/P", yaw_KP, &yaw_KP);
-    rotors_control::GetRosParameter(pnh,"yaw_PID/I", yaw_KI, &yaw_KI);
-    rotors_control::GetRosParameter(pnh,"yaw_PID/I_max", yaw_KI_max, &yaw_KI_max);
-    rotors_control::GetRosParameter(pnh,"yaw_PID/D", yaw_KD, &yaw_KD);
+    pnh.getParam("yaw_PID/P", yaw_KP);
+    pnh.getParam("yaw_PID/I", yaw_KI);
+    pnh.getParam("yaw_PID/I_max", yaw_KI_max);
+    pnh.getParam("yaw_PID/D", yaw_KD);
+
 
     roll_er = 0;
     pitch_er = 0;
@@ -289,22 +291,24 @@ namespace quad_control {
     yaw_target = 0;
 
     //Roll rate PID
-    rotors_control::GetRosParameter(pnh,"p_PID/P", p_KP, &p_KP);
-    rotors_control::GetRosParameter(pnh,"p_PID/I", p_KI, &p_KI);
-    rotors_control::GetRosParameter(pnh,"p_PID/I_max", p_KI_max, &p_KI_max);
-    rotors_control::GetRosParameter(pnh,"p_PID/D", p_KD, &p_KD);
+    pnh.getParam("p_PID/P", p_KP);
+    pnh.getParam("p_PID/I", p_KI);
+    pnh.getParam("p_PID/I_max", p_KI_max);
+    pnh.getParam("p_PID/D", p_KD);
 
     //Pitch rate PID
-    rotors_control::GetRosParameter(pnh,"q_PID/P", q_KP, &q_KP);
-    rotors_control::GetRosParameter(pnh,"q_PID/I", q_KI, &q_KI);
-    rotors_control::GetRosParameter(pnh,"q_PID/I_max", q_KI_max, &q_KI_max);
-    rotors_control::GetRosParameter(pnh,"q_PID/D", q_KD, &q_KD);
+    pnh.getParam("q_PID/P", q_KP);
+    pnh.getParam("q_PID/I", q_KI);
+    pnh.getParam("q_PID/I_max", q_KI_max);
+    pnh.getParam("q_PID/D", q_KD);
 
     //Yaw rate PID
-    rotors_control::GetRosParameter(pnh,"r_PID/P", r_KP, &r_KP);
-    rotors_control::GetRosParameter(pnh,"r_PID/I", r_KI, &r_KI);
-    rotors_control::GetRosParameter(pnh,"r_PID/I_max", r_KI_max, &r_KI_max);
-    rotors_control::GetRosParameter(pnh,"r_PID/D", r_KD, &r_KD);
+    pnh.getParam("r_PID/P", r_KP);
+    pnh.getParam("r_PID/I", r_KI);
+    pnh.getParam("r_PID/I_max", r_KI_max);
+    pnh.getParam("r_PID/D", r_KD);
+
+
 
     p_er = 0;
     q_er = 0;
@@ -484,7 +488,6 @@ namespace quad_control {
 
     //Determine vector size based on number of motors
 
-    //desired_motor_velocities.resize(vehicle_parameters_.rotor_configuration_.rotors.size());
     desired_motor_velocities.resize(4);
 
     U1 = control_inputs[0];
