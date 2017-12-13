@@ -18,54 +18,14 @@
  * limitations under the License.
  */
 
-#include <thread>
-#include <chrono>
-#include <boost/bind.hpp>
-#include <Eigen/Eigen>
-#include <stdio.h>
-#include <fstream>
-#include <iostream>
 
-#include <std_srvs/Empty.h>
 #include <std_msgs/Empty.h>
-
-#include <mav_msgs/CommandTrajectory.h>
-#include <planning_msgs/WayPoint.h>
-#include <planning_msgs/eigen_planning_msgs.h>
-#include <planning_msgs/conversions.h>
-#include <nav_msgs/Odometry.h>
 #include <geometry_msgs/TwistStamped.h>
-#include <ros/ros.h>
-#include <ros/callback_queue.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_datatypes.h>
-
 #include <slamdunk_msgs/QualityStamped.h>
 
 #include "quad_control/quad_controller.h"
 
 namespace quad_control {
-
-class WaypointWithTime {
- public:
-  WaypointWithTime()
-      : waiting_time(0) {
-  }
-
-  WaypointWithTime(double t, float x, float y, float z, float yaw)
-      : waiting_time(t) {
-    wp.position.x = x;
-    wp.position.y = y;
-    wp.position.z = z;
-    wp.yaw = yaw;
-  }
-
-  mav_msgs::CommandTrajectory wp;
-  double waiting_time;
-  const float DEG_2_RAD = M_PI / 180.0;
-
-  std::vector<quad_control::WaypointWithTime> Read_waypoints(std::vector<quad_control::WaypointWithTime> waypoints);
-};
 
 class WaypointPublisherNode {
  public:
@@ -98,20 +58,11 @@ class WaypointPublisherNode {
   tf::Quaternion q;
   double gps_roll, gps_pitch, gps_yaw;
 
-  ControllerUtility control_mode;
-  ControllerUtility auto_mode;
-  ControllerUtility threednav_mode;
-
-  WaypointWithTime waypoint_utility;
-  std::vector<WaypointWithTime> waypoints;
-
-  const float DEG_2_RAD = M_PI / 180.0;
-  int waypoints_read;
-  int published;
-  size_t i;
   double start_time;
   double current_time;
   int qualityState;
+
+  bool is3DNav = false;
 
   void CommandTrajectoryCallback(const mav_msgs::CommandTrajectoryConstPtr& command_trajectory_msg);
   void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);

@@ -18,8 +18,6 @@
  * limitations under the License.
  */
 
-#include <Eigen/Eigen>
-
 #include <mav_msgs/CommandTrajectory.h>
 #include <mav_msgs/CommandMotorSpeed.h>
 #include <mav_msgs/CommandRollPitchYawrateThrust.h>
@@ -39,22 +37,6 @@
 
 namespace quad_control {
 
-class ControllerUtility{
-  public:
-  ControllerUtility();
-  ~ControllerUtility();
-
-  //Utility functions
-  double limit( double in, double min, double max);
-  bool GetSwitchValue(void);
-  bool UpdateSwitchValue(bool currInput);
-
-
-  private:
-    bool switchValue;
-    bool prevInput;
-
-};
 
 class PositionController{
   public:
@@ -73,16 +55,10 @@ class PositionController{
   tf::Quaternion q;
   double gps_roll, gps_pitch, gps_yaw;
   double gps_x, gps_y, gps_z;
-  double mass;
 
   ros::Time last_time;
   ros::Time sim_time;
   double dt;
-
-  Eigen::Vector3d wp_BF;
-  Eigen::Vector3d pos_BF;
-  Eigen::Vector3d vel_BF;
-  ControllerUtility controller_utility_;
 
   //Position Controller
   double x_er, y_er, z_er, yaw_er;
@@ -90,29 +66,16 @@ class PositionController{
   double cp, ci, cd;
 
   //X PID
-  double x_KI_max;
-  double x_KP;
-  double x_KI;
-  double x_KD;
+  double x_KI_max, x_KP, x_KI, x_KD;
 
   //Y PID
-  double y_KI_max;
-  double y_KP;
-  double y_KI;
-  double y_KD;
+  double y_KI_max, y_KP, y_KI, y_KD;
 
   //Z PID
-  double z_KI_max;
-  double z_KP;
-  double z_KI;
-  double z_KD;
-  double z_target;
+  double z_KI_max, z_KP, z_KI, z_KD, z_target;
 
   //Yaw PID
-  double yaw_KI_max;
-  double yaw_KP;
-  double yaw_KI;
-  double yaw_KD;
+  double yaw_KI_max, yaw_KP, yaw_KI, yaw_KD;
   double yaw_target;
 
   double roll_des, pitch_des, yaw_des, thrust_des;

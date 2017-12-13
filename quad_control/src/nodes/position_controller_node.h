@@ -18,20 +18,7 @@
  * limitations under the License.
  */
 
-#include <boost/bind.hpp>
-#include <Eigen/Eigen>
-#include <stdio.h>
 
-#include <mav_msgs/CommandAttitudeThrust.h>
-#include <mav_msgs/CommandMotorSpeed.h>
-#include <mav_msgs/CommandTrajectory.h>
-#include <mav_msgs/MotorSpeed.h>
-#include <planning_msgs/WayPoint.h>
-#include <planning_msgs/eigen_planning_msgs.h>
-#include <planning_msgs/conversions.h>
-#include <nav_msgs/Odometry.h>
-#include <ros/ros.h>
-#include <ros/callback_queue.h>
 #include <tf2_ros/transform_listener.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Twist.h>
@@ -60,7 +47,6 @@ class PositionControllerNode {
   ros::Subscriber cmd_trajectory_sub_;
   ros::Subscriber landed_sub;
 
-  ros::Publisher ctrl_pub_;
   ros::Publisher odom_pub_;
   ros::Publisher bebop_topic;
 

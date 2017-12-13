@@ -18,16 +18,10 @@
 
 #include "position_controller_node.h"
 
-//#include "quad_control/parameters_ros.h"
-
-
 namespace quad_control {
 
   PositionControllerNode::PositionControllerNode(){
-
     InitializeParams();
-
-
   }
 
 
@@ -36,17 +30,12 @@ namespace quad_control {
   void PositionControllerNode::InitializeParams(){
 
     ros::NodeHandle pnh("~");
-
-
     position_controller_.InitializeParameters(pnh);
 
     wp.position.x = 0.0;
     wp.position.y = 0.0;
     wp.position.z = 1;
     wp.yaw = 0.0;
-
-    ROS_INFO("Position_controller_node Parameters Initialized.");
-
   }
 
   void PositionControllerNode::Publish(){
@@ -62,15 +51,7 @@ namespace quad_control {
     twist.linear.z = control_msg_.thrust;
     twist.angular.z = control_msg_.yaw_rate;
 
-    { // Adapt the output to be used by the simulation
-      control_msg_.thrust *= 4;
-      control_msg_.thrust += 8.33;
-      control_msg_.pitch *= (20.0 * M_PI / 180.0);
-      control_msg_.roll *= (20.0 * M_PI / 180.0);
-      control_msg_.yaw_rate *= (100.0 * M_PI / 180.0);
-    }
     printf("x: %f, y: %f, z: %f, yaw: %f\n", twist.linear.x, twist.linear.y, twist.linear.z, twist.angular.z);
-    ctrl_pub_.publish(control_msg_);
     bebop_topic.publish(twist);
 
   }
@@ -85,7 +66,6 @@ namespace quad_control {
     landed_sub = nh.subscribe("/bebop/states/ardrone3/PilotingState/FlyingStateChanged", 1, &PositionControllerNode::LandedCallback, this);
 
     //Publishers
-    ctrl_pub_ = nh.advertise<mav_msgs::CommandRollPitchYawrateThrust>("command/roll_pitch_yawrate_thrust", 10);  //Used in simulation
     odom_pub_ = nh.advertise<nav_msgs::Odometry>("odometry", 1);
     bebop_topic = nh.advertise<geometry_msgs::Twist>("/bebop/cmd_vel", 1);
     flyingState = bebop_msgs::Ardrone3PilotingStateFlyingStateChanged::state_hovering;
@@ -167,8 +147,7 @@ namespace quad_control {
   }
 
   void PositionControllerNode::OdometryCallback(){
-
-    //Publish if in told to
+    //Publish if told to
     if(wp.jerk.x){
       //Position Control Loop
       position_controller_.CalculatePositionControl(wp, current_gps_, &control_msg_);
