@@ -11,8 +11,8 @@
 # y_PID: {P: -1.5, I: 0, D: 2, I_max: 2.0 } #Positive Y axis and roll angles inversely related
 # z_PID: {P: 1, I: 0, D: -2, I_max: 2.0 }
 # yaw_PID: {P: -0.5, I: 0, D: 0.5, I_max: 2.0 }
-x_PID: {P: 0.3, I: 0.01, D: -0.2, I_max: 2 }
-y_PID: {P: -0.3, I: 0.01, D: 0.2, I_max: 2 } #Positive Y axis and roll angles inversely related
+x_PID: {P: 0.3, I: 0.01, D: -0.3, I_max: 2 }
+y_PID: {P: -0.3, I: 0.01, D: 0.3, I_max: 2 } #Positive Y axis and roll angles inversely related
 z_PID: {P: 0.4, I: 0.05, D: -0.1, I_max: 2 }
-yaw_PID: {P: 1, I: 0, D: 0, I_max: 2 }
+yaw_PID: {P: 0.5, I: 0, D: 0, I_max: 2 }
 acceleration_theshold: 0.1

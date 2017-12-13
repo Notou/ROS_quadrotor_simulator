@@ -121,7 +121,7 @@ namespace quad_control {
 
     //Maintain yaw while maneuvering
     if(fabs(command_trajectory.yaw) >= .01){
-      desired_wp.yaw = gps_yaw + command_trajectory.yaw/4;
+      desired_wp.yaw = gps_yaw + command_trajectory.yaw;
     }
 
     //Maintain altitude while maneuvering
