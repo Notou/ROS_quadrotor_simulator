@@ -45,11 +45,9 @@ class ControllerUtility{
   ~ControllerUtility();
 
   //Utility functions
-  double map(double x, double in_min, double in_max, double out_min, double out_max);
   double limit( double in, double min, double max);
   bool GetSwitchValue(void);
   bool UpdateSwitchValue(bool currInput);
-  Eigen::Vector3d rotateGFtoBF(double GF_x, double GF_y, double GF_z, double GF_roll, double GF_pitch, double GF_yaw);
 
 
   private:
@@ -122,111 +120,4 @@ class PositionController{
   double acceleration_theshold;
 
 };
-
-class AttitudeControllerParameters {
- public:
-
-  Eigen::Matrix4Xd allocation_matrix_;
-  Eigen::Vector3d attitude_gain_;
-  Eigen::Vector3d angular_rate_gain_;
-
-};
-
-class AttitudeController {
- public:
-  AttitudeController();
-  ~AttitudeController();
-
-  void InitializeParameters(const ros::NodeHandle& pnh);
-
-  void CalculateAttitudeControl(mav_msgs::CommandRollPitchYawrateThrust control_cmd_input, sensor_msgs::Imu current_imu, Eigen::VectorXd* des_rate_output);
-
-  void CalculateRateControl(mav_msgs::CommandRollPitchYawrateThrust control_cmd_input, sensor_msgs::Imu current_imu, Eigen::VectorXd des_rate_input, Eigen::VectorXd* des_control_output);
-
-  void CalculateMotorCommands(Eigen::VectorXd control_inputs, Eigen::VectorXd* des_rotor_velocities_output);
-
-  mav_msgs::CommandRollPitchYawrateThrust current_control_cmd_;
-  sensor_msgs::Imu current_imu_;
-  Eigen::VectorXd desired_angular_rates;
-  Eigen::VectorXd desired_control_cmds;
-  Eigen::VectorXd desired_motor_velocities;
-
- private:
-
-  //General
-  tf::Quaternion q;
-  double meas_roll, meas_pitch, meas_yaw;
-
-  ros::Time last_time;
-  ros::Time sim_time;
-  double dt;
-
-  ControllerUtility controller_utility_;
-
-  //Attitude Controller
-  double roll_er, pitch_er, yaw_er;
-  double roll_er_sum, pitch_er_sum, yaw_er_sum;
-  double cp, ci, cd;
-
-  //Roll PID
-  double roll_KI_max;
-  double roll_KP;
-  double roll_KI;
-  double roll_KD;
-
-  //Pitch PID
-  double pitch_KI_max;
-  double pitch_KP;
-  double pitch_KI;
-  double pitch_KD;
-
-  //Yaw PID
-  double yaw_KI_max;
-  double yaw_KP;
-  double yaw_KI;
-  double yaw_KD;
-  double yaw_target;
-
-  double p_des, q_des, r_des;
-
-  //Rate Controller
-  double p_er, q_er, r_er;
-  double p_er_sum, q_er_sum, r_er_sum;
-
-  //P Controller
-  double p_KI_max;
-  double p_KP;
-  double p_KI;
-  double p_KD;
-  double x_ang_acc;
-  double last_ang_vel_x;
-
-  //Q Controller
-  double q_KI_max;
-  double q_KP;
-  double q_KI;
-  double q_KD;
-  double y_ang_acc;
-  double last_ang_vel_y;
-
-  //R Controller
-  double r_KI_max;
-  double r_KP;
-  double r_KI;
-  double r_KD;
-  double yaw_vel_target;
-  double z_ang_acc;
-  double last_ang_vel_z;
-
-  double U1, U2, U3, U4;
-
-  //Motor Mapping
-  double KT;
-  double Kd;
-  double l;
-  double motor_lim;
-  double w1, w2, w3, w4;
-
-};
-
 }

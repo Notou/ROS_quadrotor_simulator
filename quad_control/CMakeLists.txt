@@ -9,7 +9,6 @@ add_definitions(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   cmake_modules
   geometry_msgs
-  glog_catkin
   mav_msgs
   roscpp
   sensor_msgs
@@ -109,7 +108,8 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES quad_controller
-  CATKIN_DEPENDS cmake_modules geometry_msgs glog_catkin mav_msgs roscpp sensor_msgs planning_msgs tf
+  CATKIN_DEPENDS cmake_modules geometry_msgs
+  mav_msgs roscpp sensor_msgs planning_msgs tf
 #  DEPENDS system_lib
 )
 
@@ -159,9 +159,6 @@ add_executable(position_controller_node src/nodes/position_controller_node.cpp)
 add_dependencies(position_controller_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(position_controller_node quad_controller ${catkin_LIBRARIES})
 
-add_executable(attitude_controller_node src/nodes/attitude_controller_node.cpp)
-add_dependencies(attitude_controller_node ${catkin_EXPORTED_TARGETS})
-target_link_libraries(attitude_controller_node quad_controller ${catkin_LIBRARIES})
 
 #############
 ## Install ##
