@@ -41,7 +41,7 @@ Joy::Joy() {
   //Initialize Parameters
 
   // Map similar to RC set-up
-  pnh.param("axis_roll_", axes_.roll, 4);	// RS <->
+  pnh.param("axis_roll_", axes_.roll, 2);	// RS <->
   pnh.param("axis_pitch_", axes_.pitch, 3);	// RS up/down
   pnh.param("axis_thrust_", axes_.thrust, 1);	// LS up/down
   pnh.param("axis_yaw_", axes_.yaw, 0);		// LS <->
@@ -81,7 +81,7 @@ void Joy::JoyCallback(const sensor_msgs::JoyConstPtr& msg) {
 
   // Hack for sending button states
   trajectory_msg.angular.x = msg->buttons[buttons_.takeoff];	// takeoff
-  trajectory_msg.angular.x = -1 * msg->buttons[buttons_.land];	// land
+  trajectory_msg.angular.x += -1 * msg->buttons[buttons_.land];	// land
   trajectory_msg.angular.y = msg->buttons[buttons_.ctrl_enable_3dnav];	// auto_mode
 
   trajectory_pub.publish(trajectory_msg);
