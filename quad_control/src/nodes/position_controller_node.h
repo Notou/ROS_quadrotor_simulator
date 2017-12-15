@@ -52,13 +52,13 @@ class PositionControllerNode {
 
   //Control variables
   nav_msgs::Odometry current_gps_;
-  mav_msgs::CommandRollPitchYawrateThrust control_msg_;
-  mav_msgs::CommandTrajectory wp;
+  geometry_msgs::Twist control_msg_;
+  geometry_msgs::Pose wp;
 
 
   int flyingState;
 
-  void WaypointCallback(const mav_msgs::CommandTrajectoryConstPtr& trajectory_reference_msg);
+  void WaypointCallback(const geometry_msgs::PoseConstPtr& trajectory_reference_msg);
   void OdometryCallback();
   void LandedCallback(const bebop_msgs::Ardrone3PilotingStateFlyingStateChangedPtr& state_ptr);
 };

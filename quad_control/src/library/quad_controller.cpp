@@ -75,7 +75,7 @@ namespace quad_control {
 
   }
 
-  void PositionController::CalculatePositionControl(mav_msgs::CommandTrajectory wp, nav_msgs::Odometry current_gps, mav_msgs::CommandRollPitchYawrateThrust *des_attitude_output){
+  void PositionController::CalculatePositionControl(geometry_msgs::Pose wp, nav_msgs::Odometry current_gps, geometry_msgs::Twist *des_attitude_output){
 
 
     //Convert quaternion to Euler angles
@@ -137,7 +137,7 @@ namespace quad_control {
     printf("Z   cp: %f, ci: %f, cd: %f    error: %f, target: %f, current: %f\n", cp, ci, cd, z_er, wp.position.z, gps_z);
 
     //Yaw PID
-    yaw_er = wrap_180(wp.yaw - gps_yaw);
+    yaw_er = wrap_180(wp.orientation.z - gps_yaw);
     yaw_er_sum = yaw_er_sum + yaw_er * dt;
     yaw_er_sum = limit(yaw_er_sum, -1 * yaw_KI_max, yaw_KI_max);
 
@@ -146,7 +146,7 @@ namespace quad_control {
     cd = yaw_KD * current_gps.twist.twist.angular.z;
     yaw_des = cp + ci + cd;
     yaw_des = limit(yaw_des, -1, 1);
-    printf("YAW cp: %f, ci: %f, cd: %f    error: %f, target: %f, current: %f\n", cp, ci, cd, yaw_er, wp.yaw, gps_yaw);
+    printf("YAW cp: %f, ci: %f, cd: %f    error: %f, target: %f, current: %f\n", cp, ci, cd, yaw_er, wp.orientation.z, gps_yaw);
 
     { // Convert to local coordinates (positions and speeds are given in a global reference frame so the PID is too)
       double x = pitch_des;
@@ -160,23 +160,23 @@ namespace quad_control {
     thrust_des = stick_0(thrust_des);
     yaw_des = stick_0(yaw_des);
 
-    //des_attitude_cmds.roll = roll_des;
-    //des_attitude_cmds.pitch = pitch_des;
-    des_attitude_cmds.yaw_rate = yaw_des;
-    des_attitude_cmds.thrust = thrust_des;
+    //des_attitude_cmds.angular.x = roll_des;
+    //des_attitude_cmds.angular.y = pitch_des;
+    des_attitude_cmds.angular.z = yaw_des;
+    des_attitude_cmds.linear.z = thrust_des;
 
 
     //Smooth commands to avoid vibrations
-    if(fabs(des_attitude_cmds.roll-roll_des) > acceleration_theshold){
-       des_attitude_cmds.roll += acceleration_theshold * (des_attitude_cmds.roll-roll_des > 0 ? -1 : 1);
+    if(fabs(des_attitude_cmds.angular.x-roll_des) > acceleration_theshold){
+       des_attitude_cmds.angular.x += acceleration_theshold * (des_attitude_cmds.angular.x-roll_des > 0 ? -1 : 1);
     }else{
-      	des_attitude_cmds.roll = roll_des;
+      	des_attitude_cmds.angular.x = roll_des;
     }
 
-    if(fabs(des_attitude_cmds.pitch-pitch_des) > acceleration_theshold){
-       des_attitude_cmds.pitch += acceleration_theshold * (des_attitude_cmds.pitch-pitch_des > 0 ? -1 : 1);
+    if(fabs(des_attitude_cmds.angular.y-pitch_des) > acceleration_theshold){
+       des_attitude_cmds.angular.y += acceleration_theshold * (des_attitude_cmds.angular.y-pitch_des > 0 ? -1 : 1);
     }else{
-      	des_attitude_cmds.pitch = pitch_des;
+      	des_attitude_cmds.angular.y = pitch_des;
     }
     *des_attitude_output = des_attitude_cmds;
 

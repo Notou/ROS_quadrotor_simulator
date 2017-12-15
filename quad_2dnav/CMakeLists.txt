@@ -7,10 +7,7 @@ project(quad_2dnav)
 find_package(catkin REQUIRED COMPONENTS
   cmake_modules
   geometry_msgs
-  glog_catkin
-  mav_msgs
   move_base
-  planning_msgs
   roscpp
   sensor_msgs
   tf

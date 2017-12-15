@@ -7,23 +7,12 @@ endif()
 
 add_definitions(-std=c++11)
 
-find_package(Boost REQUIRED thread)
-include_directories(SYSTEM ${Boost_INCLUDE_DIR} "../action_controller/msg_gen/cpp/include")	#WIM Changed
-link_directories(${Boost_LIBRARY_DIRS})
 
 find_package(catkin COMPONENTS
   moveit_core
   pluginlib
-  actionlib
   roscpp
   control_msgs
-  cmake_modules
-  geometry_msgs
-  glog_catkin
-  mav_msgs
-  sensor_msgs
-  planning_msgs
-  tf
   REQUIRED
   action_controller)
 
@@ -36,8 +25,8 @@ catkin_package(
   LIBRARIES
   INCLUDE_DIRS
   DEPENDS
-    moveit_core
-    )
+  moveit_core
+  )
 
 include_directories(include)
 

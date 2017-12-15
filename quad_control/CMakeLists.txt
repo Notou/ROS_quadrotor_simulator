@@ -9,10 +9,7 @@ add_definitions(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   cmake_modules
   geometry_msgs
-  mav_msgs
   roscpp
-  sensor_msgs
-  planning_msgs
   tf
 )
 
@@ -29,7 +26,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES quad_controller
   CATKIN_DEPENDS cmake_modules geometry_msgs
-  mav_msgs roscpp sensor_msgs planning_msgs tf
+  roscpp tf
 )
 
 ###########

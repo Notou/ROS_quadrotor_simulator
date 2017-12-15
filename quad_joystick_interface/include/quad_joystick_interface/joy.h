@@ -22,9 +22,7 @@
 #ifndef ROTORS_JOY_INTERFACE_JOY_H_
 #define ROTORS_JOY_INTERFACE_JOY_H_
 
-#include <geometry_msgs/PoseStamped.h>
-#include <mav_msgs/CommandRollPitchYawrateThrust.h>
-#include <mav_msgs/CommandTrajectory.h>
+#include <geometry_msgs/Twist.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Joy.h>
 
@@ -57,45 +55,12 @@ struct Max {
   double thrust_offset;
 };
 
-class ToggleSwitch{
-  private:
-    bool switchValue;
-    bool prevInput;
-
-  public:
-    ToggleSwitch(void)
-        : switchValue(false)
-        , prevInput(false)
-    {
-    }
-
-    bool GetSwitchValue(void)
-    {
-        return switchValue;
-    }
-
-    bool UpdateSwitchValue(bool currInput)
-    {
-        if (currInput != prevInput)
-        {
-            if (currInput)
-            {
-                switchValue = !switchValue;
-            }
-
-            prevInput = currInput;
-        }
-
-        return switchValue;
-    }
-};
 
 class Joy {
   typedef sensor_msgs::Joy::_buttons_type ButtonType;
 
  private:
   ros::NodeHandle nh_;
-  ros::Publisher ctrl_pub_;
   ros::Publisher trajectory_pub;
 
   ros::Subscriber joy_sub_;
@@ -105,24 +70,9 @@ class Joy {
   Axes axes_;
   Buttons buttons_;
 
-  ToggleSwitch gps_mode_switch;
-  ToggleSwitch mission_mode_switch;
-  ToggleSwitch auto_mode_switch;
-  int gps_mode;
-  int mission_mode;
-  int auto_mode;
-
-  mav_msgs::CommandRollPitchYawrateThrust control_msg_;
-  mav_msgs::CommandTrajectory trajectory_msg;
-  geometry_msgs::PoseStamped pose_;
-  sensor_msgs::Joy current_joy_;
+  geometry_msgs::Twist trajectory_msg;
 
   Max max_;
-
-  double current_yaw_vel_;
-  double v_yaw_step_;
-
-  void StopMav();
 
   void JoyCallback(const sensor_msgs::JoyConstPtr& msg);
   void Publish();

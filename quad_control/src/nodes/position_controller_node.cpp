@@ -35,21 +35,16 @@ namespace quad_control {
     wp.position.x = 0.0;
     wp.position.y = 0.0;
     wp.position.z = 1;
-    wp.yaw = 0.0;
+    wp.orientation.z = 0.0;
   }
 
   void PositionControllerNode::Publish(){
 
-    //Control message header information
-    ros::Time update_time = ros::Time::now();
-    control_msg_.header.stamp = update_time;
-    control_msg_.header.frame_id = "quad_position_ctrl_frame";
-
     geometry_msgs::Twist twist;
-    twist.linear.x = control_msg_.pitch;
-    twist.linear.y = -control_msg_.roll;
-    twist.linear.z = control_msg_.thrust;
-    twist.angular.z = control_msg_.yaw_rate;
+    twist.linear.x = control_msg_.angular.y;
+    twist.linear.y = -control_msg_.angular.x;
+    twist.linear.z = control_msg_.linear.z;
+    twist.angular.z = control_msg_.angular.z;
 
     printf("x: %f, y: %f, z: %f, yaw: %f\n", twist.linear.x, twist.linear.y, twist.linear.z, twist.angular.z);
     bebop_topic.publish(twist);
@@ -73,10 +68,12 @@ namespace quad_control {
     double lastdX, lastdY, lastdZ;
     double rollAngle, pitchAngle, yawAngle;
     tf::Quaternion q;
+    geometry_msgs::TransformStamped transformStamped;
+    double timeSinceLastTf;
+    double zShift = 0.1; //Left camera used as origin has position [0.05,0.1,0.1]m compared to the center of the drone/SLAMdunk assembly but we want to point the center of the slamdunk [0,0,0.1]m
 
     ros::Rate rate(20.0);
     while (nh.ok()){
-      geometry_msgs::TransformStamped transformStamped;
       try{ //Get position from TF
         transformStamped = tfBuffer.lookupTransform("world", "cam0",
         ros::Time(0),ros::Duration(1.0));
@@ -88,7 +85,7 @@ namespace quad_control {
       }
 
       // calc velocity
-      double timeSinceLastTf = (transformStamped.header.stamp.sec - current_gps_.header.stamp.sec) + ((int)transformStamped.header.stamp.nsec - (int)current_gps_.header.stamp.nsec)*0.000000001;
+      timeSinceLastTf = (transformStamped.header.stamp.sec - current_gps_.header.stamp.sec) + ((int)transformStamped.header.stamp.nsec - (int)current_gps_.header.stamp.nsec)*0.000000001;
       //Diff of seconds plus diff of nanoseconds (nanosec have to be divided by 10e9) Warn nsec are unsigned so substraction will always output unsigned so need to cast to int
       if (timeSinceLastTf > 0) {
         timeSinceLastTf = 0.05;
@@ -96,7 +93,6 @@ namespace quad_control {
         { //Shift oringin point towards center of slamdunk
           // tf:quaternionMsgToTF(transformStamped.transform.rotation, q);
           // tf::Matrix3x3(q).getRPY(rollAngle, pitchAngle, yawAngle);
-          double zShift = 0.1; //Left camera used as origin has position [0.05,0.1,0.1]m compared to the center of the drone/SLAMdunk assembly but we want to point the center of the slamdunk [0,0,0.1]m
           // double yShift = 0/*0.1 * cos(yawAngle) + 0.05 * sin(yawAngle)*/;
           // double xShift = 0/*0.05 * cos(yawAngle) + 0.1 * sin(yawAngle)*/;
           // transformStamped.transform.translation.x += xShift;
@@ -141,14 +137,14 @@ namespace quad_control {
 
 
   // Callbacks
-  void PositionControllerNode::WaypointCallback(const mav_msgs::CommandTrajectoryConstPtr& trajectory_reference_msg){
+  void PositionControllerNode::WaypointCallback(const geometry_msgs::PoseConstPtr& trajectory_reference_msg){
     // Update desired waypoint
     wp = *trajectory_reference_msg;
   }
 
   void PositionControllerNode::OdometryCallback(){
     //Publish if told to
-    if(wp.jerk.x){
+    if(wp.orientation.x){
       //Position Control Loop
       position_controller_.CalculatePositionControl(wp, current_gps_, &control_msg_);
       //Do not publish anything if drone not in a stable flying phase

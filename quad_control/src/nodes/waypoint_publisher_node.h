@@ -20,7 +20,6 @@
 
 
 #include <std_msgs/Empty.h>
-#include <geometry_msgs/TwistStamped.h>
 #include <slamdunk_msgs/QualityStamped.h>
 
 #include "quad_control/quad_controller.h"
@@ -49,9 +48,9 @@ class WaypointPublisherNode {
   ros::Publisher land_pub;
 
   //Waypoint variables
-  mav_msgs::CommandTrajectory command_trajectory;
-  mav_msgs::CommandTrajectory threedNav_trajectory;
-  mav_msgs::CommandTrajectory desired_wp;
+  geometry_msgs::Twist command_trajectory;
+  geometry_msgs::Pose threedNav_trajectory;
+  geometry_msgs::Pose desired_wp;
   nav_msgs::Odometry current_gps_;
 
   //General
@@ -63,12 +62,10 @@ class WaypointPublisherNode {
   int qualityState;
 
   bool is3DNav = false;
-
-  void CommandTrajectoryCallback(const mav_msgs::CommandTrajectoryConstPtr& command_trajectory_msg);
+  bool isLost = false;
+  void CommandTrajectoryCallback(const geometry_msgs::TwistConstPtr& command_trajectory_msg);
   void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg);
-  void threedNavCallback(const mav_msgs::CommandTrajectoryConstPtr& threed_nav_msg);
+  void threedNavCallback(const geometry_msgs::PoseConstPtr& threed_nav_msg);
   void qualityCallback(slamdunk_msgs::QualityStamped::ConstPtr const& quality);
 };
-
-
 }

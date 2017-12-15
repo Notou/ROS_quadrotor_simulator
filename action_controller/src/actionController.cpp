@@ -6,10 +6,10 @@
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
 #include <action_controller/MultiDofFollowJointTrajectoryAction.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/Pose.h>
 
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_datatypes.h>
-#include <mav_msgs/CommandTrajectory.h>
 #include <nav_msgs/Odometry.h>
 
 class Controller{
@@ -27,11 +27,9 @@ public:
 	{
 		created=0;
 		lastLook.x = 1000;
-		trajectory_pub = node_.advertise<mav_msgs::CommandTrajectory>("/cmd_3dnav", 10);
+		trajectory_pub = node_.advertise<geometry_msgs::Pose>("/cmd_3dnav", 10);
 		odometry_sub_ = node_.subscribe("/quad/odometry", 10, &Controller::OdometryCallback, this);
 		action_server_.start();
-
-		printf("\n\n Node ready! \n\n");
 	}
 private:
 	ros::NodeHandle node_;
@@ -39,15 +37,16 @@ private:
 	ros::Subscriber odometry_sub_;
 
 	ros::Publisher trajectory_pub;
-	mav_msgs::CommandTrajectory desired_wp;
+	geometry_msgs::Pose desired_wp;
+	geometry_msgs::Pose waypoint;
 
 	tf::Quaternion q;
 	double des_roll, des_pitch, des_yaw;
 
 	geometry_msgs::Twist empty;
-	geometry_msgs::Transform_<std::allocator<void> > currentPosition;
+	geometry_msgs::Pose currentPosition;
 	double xError, yError, zError, yawError;
-	geometry_msgs::Vector3 lastLook;
+	geometry_msgs::Point lastLook;
 	pthread_t trajectoryExecutor;
 	int created;
 
@@ -65,9 +64,9 @@ private:
 				pthread_cancel(trajectoryExecutor);
 				created=0;
 			}
-			mav_msgs::CommandTrajectory emptyTrajectory;
-			emptyTrajectory.position = currentPosition.translation;
-			emptyTrajectory.yaw = desired_wp.yaw;
+			geometry_msgs::Pose emptyTrajectory;
+			emptyTrajectory.position = currentPosition.position;
+			emptyTrajectory.orientation.z = desired_wp.orientation.z;
 			trajectory_pub.publish(emptyTrajectory);
 
 			// Marks the current goal as canceled.
@@ -84,7 +83,7 @@ private:
 				pthread_cancel(trajectoryExecutor);
 				created=0;
 			}
-			mav_msgs::CommandTrajectory emptyTrajectory;
+			geometry_msgs::Pose emptyTrajectory;
 			trajectory_pub.publish(emptyTrajectory);
 
 			// Marks the current goal as canceled.
@@ -114,51 +113,47 @@ private:
 	}
 
 	void OdometryCallback(const nav_msgs::OdometryConstPtr& odometry_msg){
-		currentPosition.translation.x = (*odometry_msg).pose.pose.position.x;
-		currentPosition.translation.y = (*odometry_msg).pose.pose.position.y;
-		currentPosition.translation.z = (*odometry_msg).pose.pose.position.z;
+		currentPosition.position = (*odometry_msg).pose.pose.position;
 		tf:quaternionMsgToTF((*odometry_msg).pose.pose.orientation, q);
-    tf::Matrix3x3(q).getRPY(currentPosition.rotation.x, currentPosition.rotation.y, currentPosition.rotation.z); //Warning! The quaternion is not used to hold quaternion values (no w is stored) but angular values instead
+    tf::Matrix3x3(q).getRPY(currentPosition.orientation.x, currentPosition.orientation.y, currentPosition.orientation.z); //Warning! The quaternion is not used to hold quaternion values (no w is stored) but angular values instead
 	}
 
 	void executeTrajectory(){
 		if(toExecute.joint_names[0]=="virtual_joint" && toExecute.points.size()>0){
-			desired_wp.jerk.x = 1;
-			geometry_msgs::Transform_<std::allocator<void> > waypoint;
 			for(int k=0; k<toExecute.points.size(); k++){
 
-				waypoint=toExecute.points[k].transforms[0];
+				waypoint.position.x=toExecute.points[k].transforms[0].translation.x;
+				waypoint.position.y=toExecute.points[k].transforms[0].translation.y;
+				waypoint.position.z=toExecute.points[k].transforms[0].translation.z;
+				waypoint.orientation=toExecute.points[k].transforms[0].rotation;
 
 				//Avoid entering possible loops;
 				for (size_t i = k+1; i < toExecute.points.size(); i++) {
-					if(calcDistanceToWaypoint(currentPosition.translation, toExecute.points[i].transforms[0].translation, desired_wp.yaw, desired_wp.yaw) < 1){
+					if(calcDistanceToWaypoint(currentPosition.position, toExecute.points[i].transforms[0].translation, desired_wp.orientation.z, desired_wp.orientation.z) < 1){
 						k = i-1;
 						continue;
 					}
 				}
 
-
 				//Convert quaternion to Euler angles
-				tf:quaternionMsgToTF(waypoint.rotation, q);
+				tf:quaternionMsgToTF(waypoint.orientation, q);
 				tf::Matrix3x3(q).getRPY(des_roll, des_pitch, des_yaw);
 
 				//Cause the drone to point itself (and the camera) towards where it's going
-				desired_wp.yaw = des_yaw;
+				desired_wp.orientation.z = des_yaw;
 				if(k+1 <toExecute.points.size()){
-					if(calcHorizontalDistanceToWaypoint(lastLook, waypoint.translation) > 3){
+					if(calcHorizontalDistanceToWaypoint(lastLook, waypoint.position) > 3){
 						// atan2( y_err, x_err)
 						printf("Last look: [%f, %f, %f]\n", lastLook.x, lastLook.y, lastLook.z);
-						lastLook = currentPosition.translation;
-						desired_wp.yaw = atan2((toExecute.points[k+1].transforms[0].translation.y - waypoint.translation.y), (toExecute.points[k+1].transforms[0].translation.x-waypoint.translation.x));
+						lastLook = currentPosition.position;
+						desired_wp.orientation.z = atan2((toExecute.points[k+1].transforms[0].translation.y - waypoint.position.y), (toExecute.points[k+1].transforms[0].translation.x-waypoint.position.x));
 					}
 				}
-				if(calcHorizontalDistanceToWaypoint(currentPosition.translation, waypoint.translation) > 0.001 && desired_wp.yaw != des_yaw){
-					desired_wp.header.stamp = ros::Time::now();
-					desired_wp.header.frame_id = "3dnav_action_frame";
-					desired_wp.position = currentPosition.translation;
+				if(calcHorizontalDistanceToWaypoint(currentPosition.position, waypoint.position) > 0.001 && desired_wp.orientation.z != des_yaw){
+					desired_wp.position = currentPosition.position;
 					trajectory_pub.publish(desired_wp);
-					printf("Rotating before translating: distance: %f\n",calcDistanceToWaypoint(currentPosition.translation, currentPosition.translation, currentPosition.rotation.z, desired_wp.yaw) );
-					while( calcDistanceToWaypoint(currentPosition.translation, currentPosition.translation, currentPosition.rotation.z, desired_wp.yaw) > 0.3 ){ //Wait for waypoint to be reached
+					printf("Rotating before translating: distance: %f\n",calcDistanceToWaypoint(currentPosition.position, currentPosition.position, currentPosition.orientation.z, desired_wp.orientation.z) );
+					while( calcDistanceToWaypoint(currentPosition.position, currentPosition.position, currentPosition.orientation.z, desired_wp.orientation.z) > 0.3 ){ //Wait for waypoint to be reached
 						printf("Rotating before translating\n");
 						ros::Duration(0.3).sleep();
 					}
@@ -166,16 +161,14 @@ private:
 					k--;
 					continue;
 				}
-				desired_wp.position = waypoint.translation;
-				desired_wp.header.stamp = ros::Time::now();
-				desired_wp.header.frame_id = "3dnav_action_frame";
+				desired_wp.position = waypoint.position;
 				trajectory_pub.publish(desired_wp);
 
-				while( calcDistanceToWaypoint(currentPosition.translation, waypoint.translation, currentPosition.rotation.z, desired_wp.yaw) > 1 ){ //Wait for waypoint to be reached
+				while( calcDistanceToWaypoint(currentPosition.position, waypoint.position, currentPosition.orientation.z, desired_wp.orientation.z) > 1 ){ //Wait for waypoint to be reached
 					ros::Duration(0.1).sleep();
 				}
 			}
-			while( calcDistanceToWaypoint(currentPosition.translation, waypoint.translation, currentPosition.rotation.z, desired_wp.yaw) > 0.1 ){ //Wait for waypoint to be reached
+			while( calcDistanceToWaypoint(currentPosition.position, waypoint.position, currentPosition.orientation.z, desired_wp.orientation.z) > 0.1 ){ //Wait for waypoint to be reached
 					ros::Duration(0.05).sleep();
 				}
 		}
@@ -184,7 +177,7 @@ private:
 		created=0;
 	}
 
-	double calcDistanceToWaypoint(geometry_msgs::Vector3 position, geometry_msgs::Vector3 waypoint, double orientation, double desired_orientation){
+	double calcDistanceToWaypoint(geometry_msgs::Point position, geometry_msgs::Point waypoint, double orientation, double desired_orientation){
 		xError = (position.x - waypoint.x) * (position.x - waypoint.x);
 		yError = (position.y - waypoint.y) * (position.y - waypoint.y);
 		zError = (position.z - waypoint.z) * (position.z - waypoint.z);
@@ -192,7 +185,15 @@ private:
 		return sqrt(xError + yError + zError + yawError);
 	}
 
-	double calcHorizontalDistanceToWaypoint(geometry_msgs::Vector3 position, geometry_msgs::Vector3 waypoint){
+	double calcDistanceToWaypoint(geometry_msgs::Point position, geometry_msgs::Vector3 waypoint, double orientation, double desired_orientation){
+		xError = (position.x - waypoint.x) * (position.x - waypoint.x);
+		yError = (position.y - waypoint.y) * (position.y - waypoint.y);
+		zError = (position.z - waypoint.z) * (position.z - waypoint.z);
+		yawError = wrap_180(desired_orientation - orientation) * wrap_180(desired_orientation - orientation);
+		return sqrt(xError + yError + zError + yawError);
+	}
+
+	double calcHorizontalDistanceToWaypoint(geometry_msgs::Point position, geometry_msgs::Point waypoint){
 		xError = (position.x - waypoint.x) * (position.x - waypoint.x);
 		yError = (position.y - waypoint.y) * (position.y - waypoint.y);
 		return sqrt(xError + yError);

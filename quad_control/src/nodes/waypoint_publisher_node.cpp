@@ -23,8 +23,9 @@
 namespace quad_control {
 
   WaypointPublisherNode::WaypointPublisherNode(){
-    InitializeParams();
+    
     ros::NodeHandle nh;
+    InitializeParams();
 
     // Subscribers
     cmd_pos_sub_ = nh.subscribe("command/trajectory", 11, &WaypointPublisherNode::CommandTrajectoryCallback, this);
@@ -33,12 +34,11 @@ namespace quad_control {
     quality_sub_ = nh.subscribe("/quality", 1, &WaypointPublisherNode::qualityCallback, this);
 
     //Publisher
-    trajectory_pub = nh.advertise<mav_msgs::CommandTrajectory>("command/waypoint", 10);
+    trajectory_pub = nh.advertise<geometry_msgs::Pose>("command/waypoint", 10);
     takeoff_pub = nh.advertise<std_msgs::Empty>("/bebop/takeoff", 10);
     land_pub = nh.advertise<std_msgs::Empty>("/bebop/land", 10);
 
     ROS_INFO_ONCE("Started Waypoint Publisher.");
-
   }
 
 
@@ -52,11 +52,11 @@ namespace quad_control {
 
   }
 
-  void WaypointPublisherNode::CommandTrajectoryCallback(const mav_msgs::CommandTrajectoryConstPtr& command_trajectory_msg){
+  void WaypointPublisherNode::CommandTrajectoryCallback(const geometry_msgs::TwistConstPtr& command_trajectory_msg){
     command_trajectory = *command_trajectory_msg;
   }
 
-  void WaypointPublisherNode::threedNavCallback(const mav_msgs::CommandTrajectoryConstPtr& threed_nav_msg){
+  void WaypointPublisherNode::threedNavCallback(const geometry_msgs::PoseConstPtr& threed_nav_msg){
     threedNav_trajectory = *threed_nav_msg;
   }
 
@@ -72,73 +72,73 @@ namespace quad_control {
     tf::Matrix3x3(q).getRPY(gps_roll, gps_pitch, gps_yaw);
 
     //Maintain pitch while maneuvering
-    if(fabs(command_trajectory.position.x) >= .01){
-      desired_wp.position.x = current_gps_.pose.pose.position.x + command_trajectory.position.x/4;
+    if(fabs(command_trajectory.linear.x) >= .01){
+      desired_wp.position.x = current_gps_.pose.pose.position.x + command_trajectory.linear.x;
     }
     //Maintain roll while maneuvering
-    if(fabs(command_trajectory.position.y) >= .01){
-      desired_wp.position.y = current_gps_.pose.pose.position.y + command_trajectory.position.y/4;
+    if(fabs(command_trajectory.linear.y) >= .01){
+      desired_wp.position.y = current_gps_.pose.pose.position.y + command_trajectory.linear.y;
     }
     //Maintain yaw while maneuvering
-    if(fabs(command_trajectory.yaw) >= .01){
-      desired_wp.yaw = gps_yaw + command_trajectory.yaw;
+    if(fabs(command_trajectory.angular.z) >= .01){
+      desired_wp.orientation.z = gps_yaw + command_trajectory.angular.z;
     }
     //Maintain altitude while maneuvering
-    if(fabs(command_trajectory.position.z) >= .01){
-      desired_wp.position.z = current_gps_.pose.pose.position.z + command_trajectory.position.z;
+    if(fabs(command_trajectory.linear.z) >= .01){
+      desired_wp.position.z = current_gps_.pose.pose.position.z + command_trajectory.linear.z;
     }
 
-    //Launch mode
-    if(command_trajectory.snap.x){
+    //Takeoff mode
+    if(command_trajectory.angular.x == 1){
       printf("Taking off!\n");
       std_msgs::Empty empty;
       desired_wp.position.x = current_gps_.pose.pose.position.x;
       desired_wp.position.y = current_gps_.pose.pose.position.y;
       desired_wp.position.z = 1.0;
-      desired_wp.yaw = gps_yaw;
-      desired_wp.jerk.x = 1;	//Set flag for position controller
+      desired_wp.orientation.z = gps_yaw;
+      desired_wp.orientation.x = 1;	//Set flag for position controller to start running
       takeoff_pub.publish(empty);
       //ros::Duration(0.5).sleep();
 
-      command_trajectory.snap.x=0;//reset command
+      command_trajectory.angular.x=0;//reset command
     }
 
     if(qualityState == 0 || qualityState >= 3){
       printf("Bad slam quality: %d\n", qualityState);
-      if (!command_trajectory.jerk.x) {
+      if (!isLost) {
         start_time = ros::Time::now().toSec();
-        command_trajectory.jerk.x=1;
-        desired_wp.jerk.x = 0;
+        isLost = true;
+        desired_wp.orientation.x = 0; //Set flag for position controller to stop running
       }
         current_time = ros::Time::now().toSec();
         if((current_time-start_time) > 10){
-          command_trajectory.snap.y = 1;
+          command_trajectory.angular.x = -1; //Land
         }
     }else{
-    	if(command_trajectory.jerk.x){
-   	     command_trajectory.jerk.x=0;
-        desired_wp.jerk.x = 1;
+    	if(isLost){
+   	     isLost = false;
+        desired_wp.orientation.x = 1;
       }
     }
     //Land mode
-    if(command_trajectory.snap.y){
+    if(command_trajectory.angular.x == -1){
       printf("Landing\n" );
       std_msgs::Empty empty;
       land_pub.publish(empty);
       desired_wp.position.x = current_gps_.pose.pose.position.x;
       desired_wp.position.y = current_gps_.pose.pose.position.y;
       desired_wp.position.z = 0.0;
-      desired_wp.yaw = gps_yaw;
-      //desired_wp.jerk.x = 0;	//Set flag for position controller
+      desired_wp.orientation.z = gps_yaw;
+      //desired_wp.angular.x = 0;	//Set flag for position controller to stop running
       trajectory_pub.publish(desired_wp);
       land_pub.publish(empty);
       ros::Duration(0.5).sleep();  //Ensure time for drone to actually land
       land_pub.publish(empty);  //To be really sure
 
-      command_trajectory.snap.y=0; //reset command
+      command_trajectory.angular.x=0; //reset command
     }
 
-    is3DNav = is3DNav != command_trajectory.snap.z;
+    is3DNav = is3DNav != command_trajectory.angular.y;
 
     if(is3DNav){
 
@@ -148,11 +148,9 @@ namespace quad_control {
         desired_wp.position.x = threedNav_trajectory.position.x;
         desired_wp.position.y = threedNav_trajectory.position.y;
         desired_wp.position.z = threedNav_trajectory.position.z;
-        desired_wp.yaw = threedNav_trajectory.yaw;
+        desired_wp.orientation.z = threedNav_trajectory.orientation.z;
       }
     }
-    desired_wp.header.stamp = ros::Time::now();
-    desired_wp.header.frame_id = "desired_waypoint_frame";
     trajectory_pub.publish(desired_wp);
   }
 

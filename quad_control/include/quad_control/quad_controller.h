@@ -18,16 +18,8 @@
  * limitations under the License.
  */
 
-#include <mav_msgs/CommandTrajectory.h>
-#include <mav_msgs/CommandMotorSpeed.h>
-#include <mav_msgs/CommandRollPitchYawrateThrust.h>
-#include <mav_msgs/MotorSpeed.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <sensor_msgs/Imu.h>
-#include <planning_msgs/WayPoint.h>
-#include <planning_msgs/eigen_planning_msgs.h>
-#include <planning_msgs/conversions.h>
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
 #include <tf/transform_broadcaster.h>
@@ -45,9 +37,9 @@ class PositionController{
 
   void InitializeParameters(const ros::NodeHandle& pnh);
 
-  void CalculatePositionControl(mav_msgs::CommandTrajectory wp, nav_msgs::Odometry current_gps, mav_msgs::CommandRollPitchYawrateThrust *des_attitude_output);
+  void CalculatePositionControl(geometry_msgs::Pose wp, nav_msgs::Odometry current_gps, geometry_msgs::Twist *des_attitude_output);
 
-  mav_msgs::CommandRollPitchYawrateThrust des_attitude_cmds;
+  geometry_msgs::Twist des_attitude_cmds;
 
   private:
 
